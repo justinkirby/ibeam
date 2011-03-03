@@ -2,3 +2,5 @@
   - README
 * TODO Hooks
   - need to make sh hooks. I do not think erl hooks are entirely viable
+* TODO tarball checks
+  - need to add check for path limits in erl_tar. definitely better done with rebar package command
