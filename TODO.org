@@ -1,0 +1,4 @@
+* TODO Documents
+  - README
+* TODO Hooks
+  - need to make sh hooks. I do not think erl hooks are entirely viable
