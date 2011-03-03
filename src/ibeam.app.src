@@ -1,0 +1,35 @@
+{application, ibeam,
+ [
+  {description, "Voalte Installer"},
+  {vsn, "00.01.00"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+		  sasl
+                 ]},
+  {mod, { ibeam_app, [
+		      ibeam,
+		      ibeam_app,
+		      ibeam_cmd_get,
+		      ibeam_cmd_install,
+		      ibeam_cmd_verify,
+		      ibeam_command,
+		      ibeam_config,
+		      ibeam_core,
+		      ibeam_file_utils,
+		      ibeam_log,
+		      ibeam_sup,
+		      ibeam_utils
+		     ]}},	
+  {env, [
+	 {commands, [
+		     get,
+		     install,
+		     verify
+		     ]},
+	 {command_prefix, "ibeam_cmd_"},
+	 {repos, "http://localhost:8888/~s/~s-~s.tar.gz"},
+	 {log_level,debug}
+	]}
+ ]}.
