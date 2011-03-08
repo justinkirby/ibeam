@@ -95,7 +95,7 @@ get_app_info(TmpDir) ->
     Vsn = ibeam_config:get_global(vsn),
 
     %% get the vsn of erts, kernel, stdlib from start_clean
-    AppRel = filename:join([TmpDir,"releases",App++".rel"]),
+    AppRel = filename:join([TmpDir,"releases",Vsn,App++".rel"]),
     DepsRel = filename:join([TmpDir,"lib",App++"-"++Vsn,"priv","deps.rel"]),
     {ok, [{release,RelAppVsn,{erts,RelErts}, RelApps}]} = file:consult(AppRel),
     {ok, [SysDep,AppDep,AppApp]} = file:consult(DepsRel),

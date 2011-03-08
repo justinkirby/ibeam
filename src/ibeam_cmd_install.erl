@@ -34,7 +34,7 @@ run() ->
     Vsn = ibeam_config:get_global(vsn),
     TmpDir = ibeam_config:get_global(tmp_dir),    
 
-    ibeam_utils:hook(TmpDir,{App,Vsn},install_pre,[]),
+    ibeam_utils:hook(TmpDir,{App,Vsn},install_pre,[TmpDir,App,Vsn]),
 
     AppList = ibeam_config:get_global(app_info),
     SysList = ibeam_config:get_global(sys_info),
@@ -45,7 +45,7 @@ run() ->
     ok = copy_releases({App,Vsn}),
 
     
-    ibeam_utils:hook(code:lib_dir(),{App,Vsn},install_post,[ToInstall]),
+    ibeam_utils:hook(code:root_dir(),{App,Vsn},install_post,[code:lib_dir(),App,Vsn]),
     ?CONSOLE("Install: ~p~n",[ToInstall]),
 
     ok.
@@ -106,6 +106,6 @@ copy_apps(Install) ->
 
 copy_releases({Name,Vsn}) ->
     TmpDir = ibeam_config:get_global(tmp_dir),
-    TmpRel = filename:join([TmpDir,"releases",Vsn]),
+    TmpRel = filename:join([TmpDir,"releases",Vsn,"*"]),
     DstRel = filename:join([code:root_dir(),"releases",Name++"-"++Vsn]),
     ibeam_file_utils:cp_r(TmpRel,DstRel).
