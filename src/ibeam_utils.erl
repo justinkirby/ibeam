@@ -13,22 +13,20 @@
 	 ]).
 
 hook(Dir, {Name,Vsn}, Hook, Args) ->
-    
+
     HookDir = filename:join([Dir,"lib",Name++"-"++Vsn,"priv","ibeam_hooks"]),
-    HookName = atom_to_list(Hook),
-    HookFile = filename:join([HookDir,HookName]),
-    case filelib:is_regular(HookFile++".erl") of
-	false ->
-	    ?CONSOLE("~p does not exist~n",[HookFile++".erl"]),
-	    ok;
-	true ->
-	    {ok,Old} = file:get_cwd(),
-	    file:set_cwd(HookDir),
-	    {ok,Hook} = compile:file(HookFile++".erl"),
-	    {module,Mod} = code:load_abs(HookFile),
-	    file:set_cwd(Old),
-	    Mod:hook(Args)
+    HookTypes = [erl,sh],
+
+    case hook_find(HookDir,Hook,HookTypes) of
+	[] -> ok;
+	Hooks ->
+	    hook_run(Hooks,HookDir,Dir,Args,[])
     end.
+
+
+    
+    
+    
 		
 		
     
@@ -152,3 +150,45 @@ sh_loop(Port, Fun, Acc) ->
         {Port, {exit_status, Rc}} ->
             {error, Rc}
     end.
+
+
+
+hook_find(Path, Hook, Ext) ->
+    hook_find(Path,Hook,Ext,[]).
+    
+hook_find(Path, Hook, [],Files) ->
+    ?CONSOLE("FOUND ~p~n",[Files]),
+    Files;
+hook_find(Path, Hook,[E|Ext],Files) ->
+    Es = atom_to_list(E),
+    Hs = atom_to_list(Hook),
+    File = filename:join(Path,Hs++"."++Es),
+    ?CONSOLE("LOOOKING ~p~n",[File]),
+    case filelib:is_regular(File) of
+	false ->
+	    hook_find(Path,Hook,Ext,Files);
+	true ->
+	    hook_find(Path,Hook,Ext,[{E,File}|Files])
+    end.
+
+hook_run([],_HookPath,_Cwd,_Args,Results) -> Results;
+
+hook_run([{sh,File}|Hooks],_HookPath,Cwd,Args, Results) ->
+    {ok,Old} = file:get_cwd(),
+    file:set_cwd(Cwd),
+
+    Result = sh(File++" "++string:join(Args," "),[]),
+    file:set_cwd(Old),
+    hook_run(Hooks,_HookPath,Cwd,Args,[Result|Results]);
+
+hook_run([{erl,File}|Hooks],HookPath, Cwd, Args,Results) ->
+    
+    {ok,Old} = file:get_cwd(),
+    file:set_cwd(HookPath),
+    {ok,Hook} = compile:file(File),
+    Beam = filename:join([HookPath,filename:basename(File,".erl")]),
+    {module,Mod} = code:load_abs(Beam),
+    file:set_cwd(Old),
+    Result = Mod:hook(Args),
+    hook_run(Hooks,HookPath,Cwd,Args,[Result|Results]).
+    
