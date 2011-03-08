@@ -24,7 +24,7 @@ cp_r(Sources, Dest) ->
     case os:type() of
         {unix, _} ->
 %%            SourceStr = string:join(Sources, " "),
-            {ok, []} = ibeam_utils:sh(?FMT("cp -R ~s ~s", [Sources, Dest]),
+            {ok, []} = ibeam_utils:sh(?FMT("cp -fR ~s ~s", [Sources, Dest]),
                                       [{use_stdout, false}, return_on_error]),
             ok;
 	OS ->
