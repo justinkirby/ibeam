@@ -1,0 +1,58 @@
+#+TITLE: Voalte REST API
+#+AUTHOR: Justin Kirby <jkirby@voalte.com>
+#+OPTIONS: ^:nil, toc:3
+
+* hooks api
+** verify_pre
+** verify_post
+** install_pre
+   This hook will be called before any install steps have been
+   started. This means the release tarball exists in a temporary
+   directory.
+*** sh
+    the file must be lib/app-vsn/priv/ibeam_hooks/install_pre.sh
+
+    The sh script will be called with the following arguments:
+    - tmp_dir
+    - app name,  foo
+    - vsn,  1.2.3
+
+    The tmp_dir is the path that verify step extracted the release
+    tarball in. ex: /tmp/ibeam_
+    
+** install_post
+   This hook will be called after *all* install steps have completed. 
+   
+*** sh
+    the file must be lib/app-vsn/priv/ibeam_hooks/install_post.sh
+
+    The sh script will be called with the following arguments:
+    - code:lib_dir()
+    - app name,  foo
+    - vsn,  1.2.3
+      
+
+    Example:
+#+BEGIN_SRC sh
+lib/app-vsn/priv/ibeam_hooks/install_post.sh \
+   /path/to/lib/erlang/lib \
+   foo 1.2.3
+#+END_SRC
+    
+   
+*** erl
+    the file must be lib/app-vsn/priv/ibeam_hooks/install_post.erl
+
+    This file will be compiled and loaded into the ibeam
+    environment. Thus, it will have access to all functions of ibeam
+    modules. Most notably:
+    - ibeam_config
+    - ibeam_utils
+    - ibeam_file_utils
+
+    The values in the list of args is the same as what is passed to
+    the sh.
+
+#+BEGIN_SRC erlang
+    Mod:hook([code:lib_dir(),"foo","1.2.3"]).
+#+END_SRC
