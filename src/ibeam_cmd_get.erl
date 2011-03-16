@@ -35,7 +35,7 @@ run() ->
     Url = case ibeam_config:get_global(url) of
 	      undefined ->
 		  UrlTemplate = ibeam_config:get_global(repos),
-		  ?FMT(UrlTemplate,[App,App,Vsn]);
+		  ?FMT(UrlTemplate,[App,Vsn]);
 	      GUrl -> GUrl
 	  end,
     
