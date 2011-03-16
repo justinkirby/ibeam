@@ -141,7 +141,7 @@ commands_usage() ->
 				       M:command_help()
 			       end, ibeam_config:get_global(commands)),
     lists:foreach(fun({Cmd, Args, Desc}) ->
-			  ?CONSOLE("  ~-15.. s~s~n  ~s~n~n",[Cmd,Args,Desc])
+			  ?CONSOLE("  ~-15.. s~s~n  ~s~n~n",[Cmd,Args,io_lib:format(Desc,[])])
 		  end,CommandModules),
     ok.
 
