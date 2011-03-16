@@ -1,8 +1,9 @@
 #+TITLE: Voalte REST API
 #+AUTHOR: Justin Kirby <jkirby@voalte.com>
 #+OPTIONS: ^:nil, toc:3
-
-* hooks api
+	       
+* hooks api    
+  	       
 ** verify_pre
 ** verify_post
 ** install_pre
@@ -27,7 +28,7 @@
     the file must be lib/app-vsn/priv/ibeam_hooks/install_post.sh
 
     The sh script will be called with the following arguments:
-    - code:lib_dir()
+    - code:root_dir()
     - app name,  foo
     - vsn,  1.2.3
       
@@ -54,5 +55,6 @@ lib/app-vsn/priv/ibeam_hooks/install_post.sh \
     the sh.
 
 #+BEGIN_SRC erlang
-    Mod:hook([code:lib_dir(),"foo","1.2.3"]).
+    Mod:hook([code:root_dir(),"foo","1.2.3"]).
 #+END_SRC
+    

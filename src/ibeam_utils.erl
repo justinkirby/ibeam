@@ -157,13 +157,11 @@ hook_find(Path, Hook, Ext) ->
     hook_find(Path,Hook,Ext,[]).
     
 hook_find(Path, Hook, [],Files) ->
-    ?CONSOLE("FOUND ~p~n",[Files]),
     Files;
 hook_find(Path, Hook,[E|Ext],Files) ->
     Es = atom_to_list(E),
     Hs = atom_to_list(Hook),
     File = filename:join(Path,Hs++"."++Es),
-    ?CONSOLE("LOOOKING ~p~n",[File]),
     case filelib:is_regular(File) of
 	false ->
 	    hook_find(Path,Hook,Ext,Files);

@@ -32,17 +32,24 @@ run() ->
 
     App = ibeam_config:get_global(name),
     Vsn = ibeam_config:get_global(vsn),
-    TmpDir = ibeam_config:get_global(tmp_dir),    
+    TmpDir = ibeam_config:get_global(tmp_dir),
+    
 
     ibeam_utils:hook(TmpDir,{App,Vsn},install_pre,[TmpDir,App,Vsn]),
 
     AppList = ibeam_config:get_global(app_info),
     SysList = ibeam_config:get_global(sys_info),
+    Prefix = ibeam_config:get_global(install_prefix),
 
-    ToInstall = install_list(AppList,SysList),
 
-    ok = copy_apps(ToInstall),
-    ok = copy_releases({App,Vsn}),
+    
+
+    
+
+%%    ToInstall = install_list(AppList,SysList),
+
+%%    ok = copy_apps(ToInstall),
+%%    ok = copy_releases({App,Vsn}),
 
     
     ibeam_utils:hook(code:root_dir(),{App,Vsn},install_post,[code:lib_dir(),App,Vsn]),

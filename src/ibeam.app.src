@@ -30,6 +30,7 @@
 		     ]},
 	 {command_prefix, "ibeam_cmd_"},
 	 {repos, "http://localhost:8888/~s/~s-~s.tar.gz"},
+	 {install_prefix, "/opt/voalte/lib"},
 	 {log_level,debug}
 	]}
  ]}.
