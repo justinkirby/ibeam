@@ -53,8 +53,10 @@ run() ->
     ?INFO("APPLIST ~n~p~n",[AppList]),
     ?INFO("INSTALL list~n~p~n.",[ToInstall]),
 
-    ok = copy_apps(DestLib,ToInstall),
+    ok = copy_apps(DestRoot,DestLib,ToInstall),
     ok = copy_releases(DestRoot,{App,Vsn}),
+    ok = copy_misc(DestRoot,["lib","releases"]),
+    
 
     
     ibeam_utils:hook(DestRoot,{App,Vsn},install_post,[DestLib,App,Vsn]),
@@ -76,7 +78,7 @@ install_list(App, Sys) ->
 	    install_list_nice(All,Sys,[])
     end.
 
-install_list_nice([],Sys,Install) -> Install;
+install_list_nice([],_Sys,Install) -> Install;
 install_list_nice([{Name,Vsn}|App],Sys,Install) ->
     SysVsn =  proplists:get_value(Name,Sys),
     Add = case SysVsn of
@@ -104,22 +106,66 @@ install_list_nice([{Name,Vsn}|App],Sys,Install) ->
 
     
 	    
-copy_apps(LibPath,Install) ->
+copy_apps(RootPath,LibPath,Install) ->
     TmpDir = ibeam_config:get_global(tmp_dir),
     TmpLib = filename:join([TmpDir,"lib"]),
 
     lists:foreach(fun({Name,Vsn}) ->
 			  Src = filename:join([TmpLib,atom_to_list(Name)++"-"++Vsn]),
 			  Dst = LibPath,
-			  Res = ibeam_file_utils:cp_r(Src,Dst),
-			  ?CONSOLE("CP res: ~p~n",[Res])			      
+			  ibeam_file_utils:cp_r(Src,Dst),
+			  extract_manifest(RootPath,LibPath,Name,Vsn)
 		  end,Install),
 
     ok.
 
-copy_releases(DestRoot,{Name,Vsn}) ->
+copy_releases(DestRoot,{_Name,Vsn}) ->
     TmpDir = ibeam_config:get_global(tmp_dir),
     TmpRel = filename:join([TmpDir,"releases",Vsn]),
     DstRel = filename:join([DestRoot,"releases"]),
 
     ibeam_file_utils:cp_r(TmpRel,DstRel).
+
+copy_misc(DestRoot,Done) ->
+    TmpDir = ibeam_config:get_global(tmp_dir),
+    {ok, DirList} = file:list_dir(TmpDir),
+    ToCp = lists:filter(fun(L) ->
+				case lists:member(L,Done) of
+				    true -> false;
+				    false -> true
+				end
+			end,DirList),
+    lists:foreach(fun(D) ->
+			  Src = filename:join([TmpDir,D]),
+			  ibeam_file_utils:cp_r(Src,DestRoot)
+		  end,ToCp).
+				
+
+
+extract_manifest(RootPath,LibPath, Name,Vsn) ->
+    Manifest = filename:join([LibPath,atom_to_list(Name)++"-"++Vsn,"priv","manifest"]),
+    case filelib:is_regular(Manifest) of
+	false ->
+	    ok;
+	true ->
+	    case file:consult(Manifest) of
+		{ok, [Terms]} ->
+		    lists:foreach(fun(T) ->
+					  extract_manifest_tarball(RootPath,T)
+				  end,Terms),
+		    ok;
+		{error, E} ->
+		    ?WARN("Error reading manifest file for ~p-~s: ~p~n",[Name,Vsn,E]),
+		    ok
+	    end
+    end.
+
+extract_manifest_tarball(RootPath,{tar,Tar,Path}) ->
+    Cwd = filename:join([RootPath,Path]),
+    TarPath = filename:join([RootPath,Tar]),
+    erl_tar:extract(TarPath,[{cwd,Cwd},compressed]).    
+			
+		    
+	    
+	
+    

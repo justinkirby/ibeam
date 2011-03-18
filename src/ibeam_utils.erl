@@ -105,7 +105,6 @@ expand_sh_flag(abort_on_error) ->
 expand_sh_flag(use_stdout) ->
     {output_handler,
      fun(Line, Acc) ->
-             ?CONSOLE("~s", [Line]),
              [Acc | Line]
      end};
 expand_sh_flag({use_stdout, false}) ->

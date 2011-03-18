@@ -79,7 +79,6 @@ run() ->
 
     case verify_rel(VerifyType,App,Sys) of
 	ok ->
-	    ?CONSOLE("Release validated~n",[]),
 	    ibeam_utils:hook(TmpDir,{Name,Vsn},verify_post,[App,Sys]),
 	    ok;
 	error -> error
@@ -185,7 +184,6 @@ check_appvsn([{Name,Vsn}|List],Sys) ->
     end.
 	    
 verify_erts([], _Paths, Acc) ->
-    ?CONSOLE("ERTS ~p~n",[Acc]),
     ok;
 verify_erts([T|Types],  Paths, Acc) ->
     {release, [{path,RelPath},{vsn,RelVsn}]} = erts_vsn(release,Paths),
