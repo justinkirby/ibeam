@@ -149,5 +149,6 @@ commands_usage() ->
 option_spec_list() ->
     [
      {help, $h, "help", undefined, "Display help message."},
-     {force, $f, "force", undefined, "Skip all safety checks and start from the beginning."}
+     {force, $f, "force", undefined, "Skip all safety checks and start from the beginning."},
+     {local_file, $l, "local", undefined, "Use local filesystem instead of url."}
     ].
