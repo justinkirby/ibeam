@@ -32,35 +32,59 @@ run() ->
 
     App = ibeam_config:get_global(name),
     Vsn = ibeam_config:get_global(vsn),
-    Url = case ibeam_config:get_global(url) of
-	      undefined ->
-		  UrlTemplate = ibeam_config:get_global(repos),
-		  ?FMT(UrlTemplate,[App,Vsn]);
-	      GUrl -> GUrl
-	  end,
     
-    Root = code:root_dir(),
     RelName = App ++ "-" ++ Vsn,
-    Dest = filename:join([Root,RelName++".tar.gz"]),
+    Dest = filename:join(["/tmp",RelName++".tar.gz"]),
 
     %% does the file exist?
     %% if so, then only download it again if force is used
-    Skip = case filelib:is_regular(Dest) of
-	       true ->
-		   case ibeam_config:get_global(force) of
-		       undefined -> true;
-		       _ -> false
-		   end;
-	        _ -> false	    
-	   end,
+    Skip = fetch_skip(Dest),
+    Source = fetch_source(App,Vsn),
 
-    case Skip of
-	true ->
-	    ?CONSOLE("~s exists, skipping get~n",[Dest]),
-	    ok;
-	false ->
-	    ibeam_utils:sh(?FMT("wget -nv -O ~s ~s",[Dest,Url]),[])
+    case fetch_sh(Dest,Source,Skip) of
+	{ok,Sh} ->
+	    ibeam_utils:sh(Sh,[]);
+	ok -> ok
     end,
+
     ibeam_config:set_global(release_file,Dest),
 
-    ok.    
+    ok.
+
+fetch_source(App,Vsn) ->
+    case ibeam_config:get_global(local_file) of
+	true ->
+	    {cp,?FMT("~s-~s.tar.gz",[App,Vsn])};
+	_ ->
+	    {wget,fetch_url(App,Vsn)}
+    end.
+	    
+
+fetch_url(App,Vsn) ->
+    case ibeam_config:get_global(url) of
+	undefined ->
+	    UrlTemplate = ibeam_config:get_global(repos),
+	    ?FMT(UrlTemplate,[App,Vsn]);
+	GUrl -> GUrl
+    end.
+
+fetch_skip(Dest) ->
+    case filelib:is_regular(Dest) of
+	true ->
+	    case ibeam_config:get_global(force) of
+		undefined -> true;
+		_ -> false
+	    end;
+	_ -> false	    
+    end.
+
+
+fetch_sh(Dest,_Src,true) ->
+    ?CONSOLE("~s exists, skipping get~n",[Dest]),
+    ok;
+fetch_sh(Dest,{cp,Src},false) ->
+    {ok,?FMT("cp -fR ~s ~s",[Src,Dest])};
+fetch_sh(Dest,{wget,Src},false) ->
+    {ok,?FMT("wget --no-check-certificate -nv -O ~s ~s",[Dest,Src])};
+fetch_sh(_,Src,false) ->
+    ?ABORT("~s is an invalid source~n",[Src]).
