@@ -122,9 +122,23 @@ copy_apps(RootPath,LibPath,Install) ->
 copy_releases(DestRoot,{_Name,Vsn}) ->
     TmpDir = ibeam_config:get_global(tmp_dir),
     TmpRel = filename:join([TmpDir,"releases",Vsn]),
-    DstRel = filename:join([DestRoot,"releases"]),
+    DstRel = filename:join([DestRoot,"releases",Vsn]),
+    filelib:ensure_dir(DstRel),
 
-    ibeam_file_utils:cp_r(TmpRel,DstRel).
+    ibeam_file_utils:cp_r(TmpRel,DstRel),
+
+
+    %% if there is a start_erl.data then we should make sure that is in
+    StartErl = filename:join([TmpDir,"releases","start_erl.data"]),
+    StartDest = filename:join([DestRoot,"releases"]),
+    case filelib:is_regular(StartErl) of
+	true -> ibeam_file_utils:cp_r(StartErl,StartDest);
+	false  -> ok
+    end.
+	    
+    
+
+
 
 copy_misc(DestRoot,Done) ->
     TmpDir = ibeam_config:get_global(tmp_dir),
@@ -137,7 +151,13 @@ copy_misc(DestRoot,Done) ->
 			end,DirList),
     lists:foreach(fun(D) ->
 			  Src = filename:join([TmpDir,D]),
-			  ibeam_file_utils:cp_r(Src,DestRoot)
+			  Dest = filename:join([DestRoot,D]),
+			  case filelib:is_dir(Src) of
+			      true -> filelib:ensure_dir(Dest);
+			      false -> ok
+			  end,
+
+			  ibeam_file_utils:cp_r(Src,Dest)
 		  end,ToCp).
 				
 
