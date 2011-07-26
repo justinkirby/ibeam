@@ -59,23 +59,23 @@ run() ->
     ibeam_utils:hook(TmpDir,{Name,Vsn},verify_pre,[App,Sys]),
 
     VerifyErts = case ibeam_config:get_global(erts) of
-		     undefined ->
-			 ?ABORT("Erts verification style not specified, see help.~n",[]);
-		     Erts -> list_to_atom(Erts)
-		 end,
+                     undefined ->
+                         ?ABORT("Erts verification style not specified, see help.~n",[]);
+                     Erts -> list_to_atom(Erts)
+                 end,
     Paths = [{global, code:root_dir()},
-	     {release, TmpDir},
-	     {embed, DestDir}
-	     ],
+             {release, TmpDir},
+             {embed, DestDir}
+            ],
 
     verify_erts(VerifyErts, Paths),
 
     VerifyType = case ibeam_config:get_global(type) of
-		     undefined ->
-			 ?ABORT("Verify type not specified, see help.~n",[]);
-		     Type ->
-			 list_to_atom(Type)
-		 end,
+                     undefined ->
+                         ?ABORT("Verify type not specified, see help.~n",[]);
+                     Type ->
+                         list_to_atom(Type)
+                 end,
 
     case verify_rel(VerifyType,App,Sys) of
 	ok ->
@@ -106,7 +106,11 @@ verify_rel(Type,_App,_Sys) ->
     error.
 
 extract_rel() ->
-    RelFile = ibeam_config:get_global(release_file),    
+    RelFile = case ibeam_config:get_global(release_file) of
+                  undefined ->
+                      find_release();
+                  Rel -> Rel
+              end,
     TmpDir = ibeam_utils:mktmp_uniq(),
     case erl_tar:extract(RelFile,[{cwd,TmpDir},compressed]) of
 	{error, R} -> ?ABORT("~p~n",[R]);
@@ -119,11 +123,11 @@ extract_rel() ->
 get_sys_info(DestPath,[{sys,AppSys},{dep,AppDep},{app,AppApp},{erts,_ErtsVsn}]) ->
     ToCheck = AppSys++AppDep++AppApp,
     AtomToVer = fun({A,_V}) ->
-			case app_vsn_info(DestPath,A) of
-			    undefined -> error;
-			    Vsn -> {A,Vsn}
-			end
-		end,
+                        case app_vsn_info(DestPath,A) of
+                            undefined -> error;
+                            Vsn -> {A,Vsn}
+                        end
+                end,
     SysSys = lists:map(AtomToVer,ToCheck),
     Rv = lists:filter(fun(AV) -> case AV of error -> false; _ -> true end end,SysSys),
     [{erts,erlang:system_info(version)}|Rv].
@@ -143,9 +147,9 @@ get_app_info(TmpDir) ->
 
     %% verify that the app and vsn are same
     case RelAppVsn of
-	{App,Vsn} -> ok;
-	_ ->
-	    ?ABORT("App and vsn in rel file do not match!~n ~p != ~p~n",[{App,Vsn},RelAppVsn])
+        {App,Vsn} -> ok;
+        _ ->
+            ?ABORT("App and vsn in rel file do not match!~n ~p != ~p~n",[{App,Vsn},RelAppVsn])
     end,
 
     [SysDep,
@@ -183,7 +187,7 @@ check_appvsn([{Name,Vsn}|List],Sys) ->
 	    {error, {Name, Vsn, SysVsn}}
     end.
 	    
-verify_erts([], _Paths, Acc) ->
+verify_erts([], _Paths, _Acc) ->
     ok;
 verify_erts([T|Types],  Paths, Acc) ->
     {release, [{path,RelPath},{vsn,RelVsn}]} = erts_vsn(release,Paths),
@@ -230,11 +234,28 @@ app_vsn_info(Path, App)  when is_atom(App) ->
     app_vsn_info(Path,atom_to_list(App));
 app_vsn_info(Path, App)  ->
     case filelib:wildcard(filename:join([Path,"lib",App++"-*"])) of
-	[] -> undefined;
-	AppVsn ->
-	    lists:last(string:tokens(hd(AppVsn),"-"))
+        [] -> undefined;
+        AppVsn ->
+            lists:last(string:tokens(hd(AppVsn),"-"))
     end.
 	    
 	    
 	    
 	    
+find_release() ->
+    %% look in /tmp/App-Vsn.tar.gz then look in rel/App-Vsn.tar.gz
+    %% then give up
+    App = ibeam_config:get_global(name),
+    Vsn = ibeam_config:get_global(vsn),
+    Fl = App ++ "-" ++ Vsn ++".tar.gz",
+    Tmp = filename:join(["/tmp",Fl]),
+    Local = filename:join(["rel",Fl]),
+
+    %% find the first file that exists
+    Found = [F || F <- [Tmp,Local], filelib:is_regular(F)],
+    case Found of
+        [] -> undefined;
+        L -> hd(L)
+    end.
+             
+        

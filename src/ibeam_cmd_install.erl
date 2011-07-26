@@ -25,7 +25,7 @@ deps() ->
      ibeam_cmd_get,
      ibeam_cmd_verify
     ].
-    
+
 
 run() ->
     ?INFO("install~n",[]),
@@ -38,13 +38,15 @@ run() ->
     Prefix = ibeam_config:get_global(install_prefix),
     DestRoot = filename:join([Prefix,App]),
     DestLib = filename:join([DestRoot,"lib"]),
-    
+
     ibeam_utils:hook(TmpDir,{App,Vsn},install_pre,[TmpDir,App,Vsn]),
 
-    filelib:ensure_dir(DestLib),
-    
+    %% the / is important. otherwise ensure_dir thinks the lib part of
+    %% the path is a file
+    filelib:ensure_dir(DestLib ++ "/"),
 
-    
+
+
 
     ToInstall = install_list(AppList,SysList),
 
@@ -56,9 +58,9 @@ run() ->
     ok = copy_apps(DestRoot,DestLib,ToInstall),
     ok = copy_releases(DestRoot,{App,Vsn}),
     ok = copy_misc(DestRoot,["lib","releases"]),
-    
 
-    
+
+
     ibeam_utils:hook(DestRoot,{App,Vsn},install_post,[DestLib,App,Vsn]),
 
     ok.
@@ -102,10 +104,10 @@ install_list_nice([{Name,Vsn}|App],Sys,Install) ->
 	true ->
 	    install_list_nice(App,Sys,Install)
     end.
-	
 
-    
-	    
+
+
+
 copy_apps(RootPath,LibPath,Install) ->
     TmpDir = ibeam_config:get_global(tmp_dir),
     TmpLib = filename:join([TmpDir,"lib"]),
@@ -135,8 +137,8 @@ copy_releases(DestRoot,{_Name,Vsn}) ->
 	true -> ibeam_file_utils:cp_r(StartErl,StartDest);
 	false  -> ok
     end.
-	    
-    
+
+
 
 
 
@@ -159,7 +161,7 @@ copy_misc(DestRoot,Done) ->
 
 			  ibeam_file_utils:cp_r(Src,Dest)
 		  end,ToCp).
-				
+
 
 
 extract_manifest(RootPath,LibPath, Name,Vsn) ->
@@ -183,9 +185,9 @@ extract_manifest(RootPath,LibPath, Name,Vsn) ->
 extract_manifest_tarball(RootPath,{tar,Tar,Path}) ->
     Cwd = filename:join([RootPath,Path]),
     TarPath = filename:join([RootPath,Tar]),
-    erl_tar:extract(TarPath,[{cwd,Cwd},compressed]).    
-			
-		    
-	    
-	
-    
+    erl_tar:extract(TarPath,[{cwd,Cwd},compressed]).
+
+
+
+
+

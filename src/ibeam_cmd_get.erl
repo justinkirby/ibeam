@@ -64,7 +64,7 @@ fetch_url(App,Vsn) ->
     case ibeam_config:get_global(url) of
 	undefined ->
 	    UrlTemplate = ibeam_config:get_global(repos),
-	    ?FMT(UrlTemplate,[App,Vsn]);
+	    ?FMT(UrlTemplate,[App,Vsn,App,Vsn]);
 	GUrl -> GUrl
     end.
 
