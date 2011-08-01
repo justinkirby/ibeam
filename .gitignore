@@ -1,3 +1,4 @@
 ibeam
 *.beam
 ebin/*.app
+*.pyc
