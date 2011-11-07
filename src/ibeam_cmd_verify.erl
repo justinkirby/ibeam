@@ -12,9 +12,9 @@
 -include("ibeam.hrl").
 
 -export([command_help/0,
-	 deps/0,
-	 run/0
-	 ]).
+         deps/0,
+         run/0
+        ]).
 
 command_help() ->
     {"verify","name=AppName vsn=AppVsn type=full|sys|none erts=all|global|embed|none",
@@ -78,10 +78,10 @@ run() ->
                  end,
 
     case verify_rel(VerifyType,App,Sys) of
-	ok ->
-	    ibeam_utils:hook(TmpDir,{Name,Vsn},verify_post,[App,Sys]),
-	    ok;
-	error -> error
+        ok ->
+            ibeam_utils:hook(TmpDir,{Name,Vsn},verify_post,[App,Sys]),
+            ok;
+        error -> error
     end.
 
 verify_erts(all, Paths) ->
@@ -92,8 +92,8 @@ verify_erts(embed, Paths) ->
     verify_erts([embed],Paths,[]);
 verify_erts(none, _Paths) ->
     ok.
-    
-    
+
+
 
 verify_rel(full,App,Sys) ->
     verify([erts,sys,dep],App,Sys);
@@ -113,8 +113,8 @@ extract_rel() ->
               end,
     TmpDir = ibeam_utils:mktmp_uniq(),
     case erl_tar:extract(RelFile,[{cwd,TmpDir},compressed]) of
-	{error, R} -> ?ABORT("~p~n",[R]);
-	ok -> ok
+        {error, R} -> ?ABORT("~p~n",[R]);
+        ok -> ok
     end,
     ibeam_config:set_global(tmp_dir,TmpDir),
     {ok, TmpDir}.
@@ -143,7 +143,7 @@ get_app_info(TmpDir) ->
     DepsRel = filename:join([TmpDir,"lib",App++"-"++Vsn,"priv","deps.rel"]),
     {ok, [{release,RelAppVsn,{erts,RelErts}, _RelApps}]} = file:consult(AppRel),
     {ok, [SysDep,AppDep,AppApp]} = file:consult(DepsRel),
-    
+
 
     %% verify that the app and vsn are same
     case RelAppVsn of
@@ -161,72 +161,72 @@ get_app_info(TmpDir) ->
 verify([], _App, _Sys) -> ok;
 verify([Type|Types], App, Sys) ->
     case proplists:get_value(Type,App) of
-	undefined ->
-	    {error, "Release does not have ~p in meta info.~n",[Type]};
-	List ->
-	    case check_appvsn(List,Sys) of
-		{error, {Name,Vsn,SysVsn}} ->
-		    ?ABORT("~p version of ~p in release does not match system verion of ~p~n",[Name,Vsn,SysVsn]),
-		    error;
-		ok ->
-		    verify(Types,App,Sys)
-	    end
+        undefined ->
+            {error, "Release does not have ~p in meta info.~n",[Type]};
+        List ->
+            case check_appvsn(List,Sys) of
+                {error, {Name,Vsn,SysVsn}} ->
+                    ?ABORT("~p version of ~p in release does not match system verion of ~p~n",[Name,Vsn,SysVsn]),
+                    error;
+                ok ->
+                    verify(Types,App,Sys)
+            end
     end.
 
 check_appvsn([],_Sys) -> ok;
 check_appvsn([{Name,Vsn}|List],Sys) ->
     case proplists:get_value(Name,Sys) of
-	undefined ->
-	    %% this is ok. it means the app isn't in the system, so it should be installed.
-	    check_appvsn(List,Sys);
-	Vsn->
-	    %% same vsn! all is good
-	    check_appvsn(List,Sys);
-	SysVsn ->
-	    %% crap, they don't match, return error.
-	    {error, {Name, Vsn, SysVsn}}
+        undefined ->
+            %% this is ok. it means the app isn't in the system, so it should be installed.
+            check_appvsn(List,Sys);
+        Vsn->
+            %% same vsn! all is good
+            check_appvsn(List,Sys);
+        SysVsn ->
+            %% crap, they don't match, return error.
+            {error, {Name, Vsn, SysVsn}}
     end.
-	    
+
 verify_erts([], _Paths, _Acc) ->
     ok;
 verify_erts([T|Types],  Paths, Acc) ->
     {release, [{path,RelPath},{vsn,RelVsn}]} = erts_vsn(release,Paths),
     case erts_vsn(T,Paths) of
-	{T,[{path,_},{vsn,RelVsn}]} = Tf->
-	    %% T erts-VSN == RelVsn so all is good... continue
-	    verify_erts(Types,Paths,[Tf|Acc]);
-	undefined ->
-	    %% this can be two reasons.
-	    %% 1. there is no global erlang... that is fine
-	    %% 2. there is no embed install yet... that is fine.
-	    verify_erts(Types,Paths,[{T,undefined}|Acc]);
-	{T, [{path,RelPath},{vsn,_}]} ->
-	    %% wtf? how did this happen?
-	    ?ABORT("the erl you are using is in the temporary release, how the hell did you do that?~n",[]);
-	{T,[{path,_},{vsn,TVsn}]} ->
-	    %% they are different erts! die
-	    ?ABORT("~p erts-~s is different than release erts-~s~n",[T,TVsn,RelVsn])
+        {T,[{path,_},{vsn,RelVsn}]} = Tf->
+            %% T erts-VSN == RelVsn so all is good... continue
+            verify_erts(Types,Paths,[Tf|Acc]);
+        undefined ->
+            %% this can be two reasons.
+            %% 1. there is no global erlang... that is fine
+            %% 2. there is no embed install yet... that is fine.
+            verify_erts(Types,Paths,[{T,undefined}|Acc]);
+        {T, [{path,RelPath},{vsn,_}]} ->
+            %% wtf? how did this happen?
+            ?ABORT("the erl you are using is in the temporary release, how the hell did you do that?~n",[]);
+        {T,[{path,_},{vsn,TVsn}]} ->
+            %% they are different erts! die
+            ?ABORT("~p erts-~s is different than release erts-~s~n",[T,TVsn,RelVsn])
     end.
-	    
-    
-   
-    
-    
-    
 
-    
+
+
+
+
+
+
+
 erts_vsn(global,_Paths) ->
     {global,[{path,code:lib_dir()},{vsn,erlang:system_info(version)}]};
 erts_vsn(Type,Paths) ->
     Path = case proplists:get_value(Type,Paths) of
-	       undefined -> ?ABORT("~p path does not exist!?~n",[Type]);
-	       P -> filename:join([P,"lib"])
-	   end,
+               undefined -> ?ABORT("~p path does not exist!?~n",[Type]);
+               P -> filename:join([P,"lib"])
+           end,
     case filelib:wildcard("erts-*",Path) of
-	[] -> undefined;
-	Erts ->
-	    Vsn = lists:last(string:tokens(hd(Erts),"-")),
-	    {Type, [{path, Path},{vsn,Vsn}]}
+        [] -> undefined;
+        Erts ->
+            Vsn = lists:last(string:tokens(hd(Erts),"-")),
+            {Type, [{path, Path},{vsn,Vsn}]}
     end.
 
 
@@ -238,10 +238,10 @@ app_vsn_info(Path, App)  ->
         AppVsn ->
             lists:last(string:tokens(hd(AppVsn),"-"))
     end.
-	    
-	    
-	    
-	    
+
+
+
+
 find_release() ->
     %% look in /tmp/App-Vsn.tar.gz then look in rel/App-Vsn.tar.gz
     %% then give up
@@ -257,5 +257,5 @@ find_release() ->
         [] -> undefined;
         L -> hd(L)
     end.
-             
-        
+
+
