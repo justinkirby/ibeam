@@ -13,9 +13,9 @@
 -include("ibeam.hrl").
 
 -export([command_help/0,
-	 deps/0,
-	 run/0
-	 ]).
+         deps/0,
+         run/0
+        ]).
 
 
 command_help() ->
@@ -24,7 +24,7 @@ command_help() ->
     {"get","name=AppName vsn=AppVsn url=http://FullUrl.com/path",HelpDesc}.
 
 deps() -> [].
-    
+
 
 run() ->
     ?INFO("get~n",[]),
@@ -32,7 +32,7 @@ run() ->
 
     App = ibeam_config:get_global(name),
     Vsn = ibeam_config:get_global(vsn),
-    
+
     RelName = App ++ "-" ++ Vsn,
     Dest = filename:join(["/tmp",RelName++".tar.gz"]),
 
@@ -42,9 +42,9 @@ run() ->
     Source = fetch_source(App,Vsn),
 
     case fetch_sh(Dest,Source,Skip) of
-	{ok,Sh} ->
-	    ibeam_utils:sh(Sh,[]);
-	ok -> ok
+        {ok,Sh} ->
+            ibeam_utils:sh(Sh,[]);
+        ok -> ok
     end,
 
     ibeam_config:set_global(release_file,Dest),
@@ -53,29 +53,29 @@ run() ->
 
 fetch_source(App,Vsn) ->
     case ibeam_config:get_global(local_file) of
-	true ->
-	    {cp,?FMT("~s-~s.tar.gz",[App,Vsn])};
-	_ ->
-	    {wget,fetch_url(App,Vsn)}
+        true ->
+            {cp,?FMT("~s-~s.tar.gz",[App,Vsn])};
+        _ ->
+            {wget,fetch_url(App,Vsn)}
     end.
-	    
+
 
 fetch_url(App,Vsn) ->
     case ibeam_config:get_global(url) of
-	undefined ->
-	    UrlTemplate = ibeam_config:get_global(repos),
-	    ?FMT(UrlTemplate,[App,Vsn,App,Vsn]);
-	GUrl -> GUrl
+        undefined ->
+            UrlTemplate = ibeam_config:get_global(repos),
+            ?FMT(UrlTemplate,[App,Vsn,App,Vsn]);
+        GUrl -> GUrl
     end.
 
 fetch_skip(Dest) ->
     case filelib:is_regular(Dest) of
-	true ->
-	    case ibeam_config:get_global(force) of
-		undefined -> true;
-		_ -> false
-	    end;
-	_ -> false	    
+        true ->
+            case ibeam_config:get_global(force) of
+                undefined -> true;
+                _ -> false
+            end;
+        _ -> false
     end.
 
 
