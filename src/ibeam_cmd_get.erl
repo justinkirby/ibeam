@@ -69,11 +69,16 @@ fetch_url(App,Vsn) ->
 fetch_skip(Dest) ->
     case filelib:is_regular(Dest) of
         true ->
-            case ibeam_config:get_global(force) of
-                undefined -> true;
-                _ -> false
+            case ibeam_config:get_global(force, false) of
+                false ->
+                    case ibeam_config:get_global(local_file, false) of
+                        false ->
+                            true;
+                        true -> false
+                    end;
+                true -> false
             end;
-        _ -> false
+        false -> false
     end.
 
 
