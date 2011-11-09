@@ -59,7 +59,7 @@ log(Level, Str, Args) ->
     {ok, LogLevel} = application:get_env(ibeam, log_level),
     case should_log(LogLevel, Level) of
         true ->
-            io:format(log_prefix(Level) ++ Str, Args);
+            io:format(standard_error, log_prefix(Level) ++ Str, Args);
         false ->
             ok
     end.
