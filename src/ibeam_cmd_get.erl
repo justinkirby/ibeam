@@ -27,8 +27,6 @@ deps() -> [].
 
 
 run() ->
-    ?INFO("get~n",[]),
-
 
     App = ibeam_config:get_global(name),
     Vsn = ibeam_config:get_global(vsn),
@@ -80,7 +78,7 @@ fetch_skip(Dest) ->
 
 
 fetch_sh(Dest,_Src,true) ->
-    ?CONSOLE("~s exists, skipping get~n",[Dest]),
+    ?WARN("~s exists, skipping get~n",[Dest]),
     ok;
 fetch_sh(Dest,{cp,Src},false) ->
     {ok,?FMT("cp -fR ~s ~s",[Src,Dest])};

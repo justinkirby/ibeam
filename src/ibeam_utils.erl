@@ -19,7 +19,7 @@ hook(Dir, Hook, Args) ->
 
     case hook_find(HookDir,HookTypes, []) of
         [] ->
-            ?DEBUG("NO hooks found for ~p~n",[Hook]),
+            ?INFO("NO hooks found for ~p in ~s~n",[Hook, HookDir]),
             ok;
         Hooks ->
             ?DEBUG("~p hooks: ~p~n",[Hook, Hooks]),
@@ -52,7 +52,7 @@ mktmp_uniq() ->
     UniqPath.
 
 sh(Command0, Options0) ->
-    ?INFO("sh: ~s\n~p\n", [Command0, Options0]),
+    ?INFO("sh: ~s~n", [Command0]),
 
     DefaultOptions = [use_stdout, abort_on_error],
     Options = [expand_sh_flag(V)
@@ -159,9 +159,13 @@ hook_find(_Path, [], Acc) -> Acc;
 hook_find(Path, [E|Ext], Acc) ->
     Regex = ".*\\."++atom_to_list(E)++"$",
     Paths = filelib:fold_files(Path, Regex, false, fun(F,A) -> [F|A] end, []),
-    PathTyped = {E, lists:sort(Paths)},
-
-    hook_find(Path, Ext, [PathTyped|Acc]).
+    case Paths of
+        [] ->
+            hook_find(Path, Ext, Acc);
+        P ->
+            PathTyped = {E, lists:sort(P)},
+            hook_find(Path, Ext, [PathTyped|Acc])
+    end.
 
 
 

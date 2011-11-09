@@ -23,11 +23,8 @@ run(["version"]) ->
 run(Args) ->
     Commands = parse_args(Args),
 
+    ibeam_log:init(),
 
-    %%    ok = crypto:start(),
-    %% start logger when we have it
-
-    application:start(ibeam),
     CmdPre = ibeam_config:get_global(command_prefix),
 
     CommandAtoms = [list_to_atom(CmdPre++C) || C <- Commands],
@@ -152,7 +149,7 @@ option_spec_list() ->
     [
      {help, $h, "help", undefined, "Display help message."},
      {version, $V, "version", undefined, "Display version."},
-     {verbose, $v, "verbose", undefined, "verbose logging output"},
+     {verbose, $v, "verbose", integer, "verbose logging output, 0-3 0=error,3=debug"},
      {force, $f, "force", undefined, "Skip all safety checks and start from the beginning."},
      {local_file, $l, "local", undefined, "Use local filesystem instead of url."},
      {noauto, $a, "noauto", undefined, "Do not automatically run dependent commands."}
