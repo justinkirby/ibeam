@@ -39,7 +39,7 @@ run() ->
     DestRoot = filename:join([Prefix,App]),
     DestLib = filename:join([DestRoot,"lib"]),
 
-    ibeam_utils:hook(TmpDir,{App,Vsn},install_pre,[TmpDir,App,Vsn]),
+    ibeam_utils:hook(TmpDir,install_pre,[TmpDir,App,Vsn]),
 
     %% the / is important. otherwise ensure_dir thinks the lib part of
     %% the path is a file
@@ -61,7 +61,7 @@ run() ->
 
 
 
-    ibeam_utils:hook(DestRoot,{App,Vsn},install_post,[DestLib,App,Vsn]),
+    ibeam_utils:hook(DestRoot,install_post,[TmpDir,App,Vsn]),
 
     ok.
 
