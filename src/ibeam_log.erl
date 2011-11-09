@@ -36,12 +36,8 @@
 %% ===================================================================
 
 init() ->
-    case ibeam_config:get_global(verbose, "0") of
-        "1" ->
-            set_level(debug);
-        _ ->
-            set_level(error)
-    end.
+    Verbose = ibeam_config:get_global(verbose, 1),
+    set_level(int_to_level(Verbose)).
 
 
 set_level(Level) ->
@@ -59,7 +55,7 @@ log(Level, Str, Args) ->
     {ok, LogLevel} = application:get_env(ibeam, log_level),
     case should_log(LogLevel, Level) of
         true ->
-            io:format(log_prefix(Level) ++ Str, Args);
+            io:format(standard_error, log_prefix(Level) ++ Str, Args);
         false ->
             ok
     end.
@@ -82,3 +78,10 @@ log_prefix(debug) -> "DEBUG: ";
 log_prefix(info)  -> "INFO:  ";
 log_prefix(warn)  -> "WARN:  ";
 log_prefix(error) -> "ERROR: ".
+
+
+int_to_level(2) -> warn;
+int_to_level(3) -> info;
+int_to_level(4) -> debug;
+int_to_level(_) -> error.
+

@@ -39,7 +39,7 @@ run() ->
     DestRoot = filename:join([Prefix,App]),
     DestLib = filename:join([DestRoot,"lib"]),
 
-    ibeam_utils:hook(TmpDir,{App,Vsn},install_pre,[TmpDir,App,Vsn]),
+    ibeam_utils:hook(TmpDir,install_pre,[TmpDir,App,Vsn]),
 
     %% the / is important. otherwise ensure_dir thinks the lib part of
     %% the path is a file
@@ -51,17 +51,27 @@ run() ->
     ToInstall = install_list(AppList,SysList),
 
 
-    ?INFO("SYSLIST ~n~p~n",[SysList]),
-    ?INFO("APPLIST ~n~p~n",[AppList]),
-    ?INFO("INSTALL list~n~p~n.",[ToInstall]),
+    lists:foreach(fun({A,V}) ->
+                          ?DEBUG("sys:~p-~s~n",[A,V])
+                  end, SysList),
+    lists:foreach(fun({A,V}) ->
+                          ?DEBUG("app:~p-~s~n",[A,V])
+                  end, proplists:get_value(sys,AppList)),
 
-    ok = copy_apps(DestRoot,DestLib,ToInstall),
-    ok = copy_releases(DestRoot,{App,Vsn}),
-    ok = copy_misc(DestRoot,["lib","releases"]),
+    case ToInstall of
+        [] ->
+            ?ABORT("!!!! NOT INSTALLING ANY APPS !!!!~n",[]);
+        _ ->
+            lists:foreach(fun({A,V}) ->
+                                  ?DEBUG("install:~p-~s~n",[A,V])
+                          end, ToInstall),
 
+            ok = copy_apps(DestRoot,DestLib,ToInstall),
+            ok = copy_releases(DestRoot,{App,Vsn}),
+            ok = copy_misc(DestRoot,["lib","releases"]),
 
-
-    ibeam_utils:hook(DestRoot,{App,Vsn},install_post,[DestLib,App,Vsn]),
+            ibeam_utils:hook(TmpDir,install_post,[TmpDir,App,Vsn])
+    end,
 
     ok.
 

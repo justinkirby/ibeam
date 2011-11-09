@@ -1,9 +1,10 @@
 
 -module(ibeam_core).
 
--include("ibeam.hrl").
 
 -export([run/1]).
+
+-include("ibeam.hrl").
 
 -ifndef(BUILD_TIME).
 -define(BUILD_TIME, "undefined").
@@ -14,24 +15,16 @@
 -endif.
 
 run(["help"]) ->
-    ok = application:load(ibeam),
     help(),
     ok;
 run(["version"]) ->
-    ok = application:load(ibeam),
     version(),
     ok;
 run(Args) ->
-    ok = application:load(ibeam),
-
-
     Commands = parse_args(Args),
 
+    ibeam_log:init(),
 
-    %%    ok = crypto:start(),
-    %% start logger when we have it
-
-    application:start(ibeam),
     CmdPre = ibeam_config:get_global(command_prefix),
 
     CommandAtoms = [list_to_atom(CmdPre++C) || C <- Commands],
@@ -121,7 +114,7 @@ filter_flags([Item | Rest], Commands) ->
             ibeam_config:set_global(Key,Value),
             filter_flags(Rest,Commands);
         Other ->
-            ?CONSOLE("Ignoring command line argument: ~p\n",[Other]),	    
+            ?CONSOLE("Ignoring command line argument: ~p\n",[Other]),
             filter_flags(Rest,Commands)
     end.
 
@@ -131,7 +124,7 @@ filter_flags([Item | Rest], Commands) ->
 
 version() ->
     {ok, Vsn} = application:get_key(ibeam, vsn),
-    ?CONSOLE("ibeam version: ~s~n",[Vsn]).
+    ?CONSOLE("ibeam version: ~s date: ~s vcs: ~s~n",[Vsn, ?BUILD_TIME, ?VCS_INFO ]).
 
 help() ->
     OptSpecList = option_spec_list(),
@@ -155,6 +148,8 @@ commands_usage() ->
 option_spec_list() ->
     [
      {help, $h, "help", undefined, "Display help message."},
+     {version, $V, "version", undefined, "Display version."},
+     {verbose, $v, "verbose", integer, "verbose logging output, 0-3 0=error,3=debug"},
      {force, $f, "force", undefined, "Skip all safety checks and start from the beginning."},
      {local_file, $l, "local", undefined, "Use local filesystem instead of url."},
      {noauto, $a, "noauto", undefined, "Do not automatically run dependent commands."}

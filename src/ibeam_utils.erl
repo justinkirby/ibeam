@@ -3,33 +3,36 @@
 -include("ibeam.hrl").
 
 -export([
-	 hook/4,
-	 app_in_sys/1,
-	 mktmp_uniq/0,
-	 sh/2,
-	 find_executable/1,
-	 log_and_abort/2,
-	 abort/2
-	 ]).
+         hook/3,
+         app_in_sys/1,
+         mktmp_uniq/0,
+         sh/2,
+         find_executable/1,
+         log_and_abort/2,
+         abort/2
+        ]).
 
-hook(Dir, {Name,Vsn}, Hook, Args) ->
+hook(Dir, Hook, Args) ->
 
-    HookDir = filename:join([Dir,"lib",Name++"-"++Vsn,"priv","ibeam_hooks"]),
+    HookDir = filename:join([Dir,"_hooks",atom_to_list(Hook)]),
     HookTypes = [erl,sh],
 
-    case hook_find(HookDir,Hook,HookTypes) of
-	[] -> ok;
-	Hooks ->
-	    hook_run(Hooks,HookDir,Dir,Args,[])
+    case hook_find(HookDir,HookTypes, []) of
+        [] ->
+            ?INFO("NO hooks found for ~p in ~s~n",[Hook, HookDir]),
+            ok;
+        Hooks ->
+            ?DEBUG("~p hooks: ~p~n",[Hook, Hooks]),
+            hook_run(Hooks,HookDir,Dir,Args,[])
     end.
 
 
-    
-    
-    
-		
-		
-    
+
+
+
+
+
+
 
 app_in_sys({Name,Vsn}) ->
     Lib = code:lib_dir(),
@@ -39,17 +42,17 @@ app_in_sys({Name,Vsn}) ->
 
 mktmp_uniq() ->
     TempBase = case os:getenv("TEMP") of
-		   false ->
-		       "/tmp";
-		   Tb -> Tb
-	       end,
+                   false ->
+                       "/tmp";
+                   Tb -> Tb
+               end,
     Uniq = integer_to_list(erlang:phash2({node(),now()})),
     UniqPath = filename:join([TempBase,"ibeam_"++Uniq]),
     ok = filelib:ensure_dir(UniqPath),
     UniqPath.
 
 sh(Command0, Options0) ->
-    ?INFO("sh: ~s\n~p\n", [Command0, Options0]),
+    ?INFO("sh: ~s~n", [Command0]),
 
     DefaultOptions = [use_stdout, abort_on_error],
     Options = [expand_sh_flag(V)
@@ -152,21 +155,22 @@ sh_loop(Port, Fun, Acc) ->
 
 
 
-hook_find(Path, Hook, Ext) ->
-    hook_find(Path,Hook,Ext,[]).
-    
-hook_find(Path, Hook, [],Files) ->
-    Files;
-hook_find(Path, Hook,[E|Ext],Files) ->
-    Es = atom_to_list(E),
-    Hs = atom_to_list(Hook),
-    File = filename:join(Path,Hs++"."++Es),
-    case filelib:is_regular(File) of
-	false ->
-	    hook_find(Path,Hook,Ext,Files);
-	true ->
-	    hook_find(Path,Hook,Ext,[{E,File}|Files])
+hook_find(_Path, [], Acc) -> Acc;
+hook_find(Path, [E|Ext], Acc) ->
+    Regex = ".*\\."++atom_to_list(E)++"$",
+    Paths = filelib:fold_files(Path, Regex, false, fun(F,A) -> [F|A] end, []),
+    case Paths of
+        [] ->
+            hook_find(Path, Ext, Acc);
+        P ->
+            PathTyped = {E, lists:sort(P)},
+            hook_find(Path, Ext, [PathTyped|Acc])
     end.
+
+
+
+
+
 
 hook_run([],_HookPath,_Cwd,_Args,Results) -> Results;
 
@@ -179,13 +183,13 @@ hook_run([{sh,File}|Hooks],_HookPath,Cwd,Args, Results) ->
     hook_run(Hooks,_HookPath,Cwd,Args,[Result|Results]);
 
 hook_run([{erl,File}|Hooks],HookPath, Cwd, Args,Results) ->
-    
+
     {ok,Old} = file:get_cwd(),
     file:set_cwd(HookPath),
-    {ok,Hook} = compile:file(File),
+    {ok,_Hook} = compile:file(File),
     Beam = filename:join([HookPath,filename:basename(File,".erl")]),
     {module,Mod} = code:load_abs(Beam),
     file:set_cwd(Old),
     Result = Mod:hook(Args),
     hook_run(Hooks,HookPath,Cwd,Args,[Result|Results]).
-    
+

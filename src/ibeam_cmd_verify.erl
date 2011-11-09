@@ -47,7 +47,7 @@ run() ->
     Vsn = ibeam_config:get_global(vsn),
     Prefix = ibeam_config:get_global(install_prefix),
     DestDir = filename:join([Prefix,Name]),
-
+    ?INFO("verifying ~s-~s in ~s~n",[Name,Vsn,TmpDir]),
 
     App = get_app_info(TmpDir),
     Sys = get_sys_info(DestDir,App),
@@ -56,7 +56,7 @@ run() ->
     ibeam_config:set_global(sys_info,Sys),
 
 
-    ibeam_utils:hook(TmpDir,{Name,Vsn},verify_pre,[App,Sys]),
+    ibeam_utils:hook(TmpDir,verify_pre,[App,Sys]),
 
     VerifyErts = case ibeam_config:get_global(erts) of
                      undefined ->
@@ -79,7 +79,7 @@ run() ->
 
     case verify_rel(VerifyType,App,Sys) of
         ok ->
-            ibeam_utils:hook(TmpDir,{Name,Vsn},verify_post,[App,Sys]),
+            ibeam_utils:hook(TmpDir,verify_post,[App,Sys]),
             ok;
         error -> error
     end.

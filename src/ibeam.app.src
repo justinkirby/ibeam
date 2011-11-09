@@ -21,7 +21,7 @@
 		      ibeam_log,
 		      ibeam_sup,
 		      ibeam_utils
-		     ]}},	
+		     ]}},
   {env, [
 	 {commands, [
 		     get,
@@ -31,6 +31,7 @@
 	 {command_prefix, "ibeam_cmd_"},
 	 {repos, "http://kickstart.voalte.net/~s/~s/~s-~s.tar.gz"},
 	 {install_prefix, "/opt/voalte/lib"},
-	 {log_level,debug}
+	 {verbose, 1},
+	 {log_level,info}
 	]}
  ]}.
