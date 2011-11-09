@@ -70,7 +70,7 @@ run() ->
             ok = copy_releases(DestRoot,{App,Vsn}),
             ok = copy_misc(DestRoot,["lib","releases"]),
 
-            ibeam_utils:hook(TmpDir,install_post,[TmpDir,App,Vsn])
+            ibeam_utils:hook(TmpDir,install_post,[DestLib,App,Vsn])
     end,
 
     ok.

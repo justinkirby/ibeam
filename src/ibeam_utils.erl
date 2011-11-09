@@ -178,18 +178,22 @@ hook_run([{sh,File}|Hooks],_HookPath,Cwd,Args, Results) ->
     {ok,Old} = file:get_cwd(),
     file:set_cwd(Cwd),
 
-    Result = sh(File++" "++string:join(Args," "),[]),
+    Result = [sh(F++" "++string:join(Args," "),[]) || F <- File],
     file:set_cwd(Old),
-    hook_run(Hooks,_HookPath,Cwd,Args,[Result|Results]);
+    hook_run(Hooks,_HookPath,Cwd,Args,Result++Results);
 
 hook_run([{erl,File}|Hooks],HookPath, Cwd, Args,Results) ->
 
     {ok,Old} = file:get_cwd(),
     file:set_cwd(HookPath),
-    {ok,_Hook} = compile:file(File),
-    Beam = filename:join([HookPath,filename:basename(File,".erl")]),
-    {module,Mod} = code:load_abs(Beam),
+    Run = fun(F) ->
+                  {ok,_Hook} = compile:file(F),
+                  Beam = filename:join([HookPath,filename:basename(F,".erl")]),
+                  {module,Mod} = code:load_abs(Beam),
+                  Mod:hook(Args)
+          end,
+
+    Result = [Run(F) || F <- File],
     file:set_cwd(Old),
-    Result = Mod:hook(Args),
-    hook_run(Hooks,HookPath,Cwd,Args,[Result|Results]).
+    hook_run(Hooks,HookPath,Cwd,Args,Result++Results).
 
