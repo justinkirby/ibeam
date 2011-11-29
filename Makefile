@@ -4,23 +4,23 @@
 all: deps compile
 
 compile: deps
-	./rebar compile
-	./rebar escriptize
+	rebar compile
+	rebar escriptize
 
 deps:
-	./rebar get-deps
+	rebar get-deps
 
 clean:
-	./rebar clean
+	rebar clean
 test: compile
-	./rebar eunit app=ibeam
-	./rebar ct
+	rebar eunit app=ibeam
+	rebar ct
 
 distclean: clean relclean
-	./rebar delete-deps
+	rebar delete-deps
 
 rel: deps compile
-	./rebar escriptize
+	rebar escriptize
 
 relclean:
 	rm -fr ibeam
