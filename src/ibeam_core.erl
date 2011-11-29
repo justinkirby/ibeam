@@ -124,7 +124,7 @@ filter_flags([Item | Rest], Commands) ->
 
 version() ->
     {ok, Vsn} = application:get_key(ibeam, vsn),
-    ?CONSOLE("ibeam version: ~s date: ~s vcs: ~s~n",[Vsn, ?BUILD_TIME, ?VCS_INFO ]).
+    ?CONSOLE("ibeam version: ~s~n",[Vsn]).
 
 help() ->
     OptSpecList = option_spec_list(),
