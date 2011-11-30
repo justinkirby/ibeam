@@ -184,7 +184,7 @@ hook_run([{sh,File}|Hooks],_HookPath,Cwd,Args, Results) ->
     {ok,Old} = file:get_cwd(),
     file:set_cwd(Cwd),
     RunSh = fun(F) ->
-                    case sh(F++" "++string:join(Args, ""), []) of
+                    case sh(F++" "++string:join(Args, " "), []) of
                         {ok, Out} ->
                             file:write(standard_io, Out),
                             Out;
