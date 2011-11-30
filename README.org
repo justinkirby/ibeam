@@ -1,9 +1,13 @@
-#+TITLE: Voalte REST API
+#+TITLE: ibeam
 #+AUTHOR: Justin Kirby <jkirby@voalte.com>
 #+OPTIONS: ^:nil, toc:3
-	       
-* hooks api    
-  	       
+
+
+*
+
+
+* hooks api
+
 ** verify_pre
 ** verify_post
 ** install_pre
@@ -20,10 +24,10 @@
 
     The tmp_dir is the path that verify step extracted the release
     tarball in. ex: /tmp/ibeam_
-    
+
 ** install_post
-   This hook will be called after *all* install steps have completed. 
-   
+   This hook will be called after *all* install steps have completed.
+
 *** sh
     the file must be lib/app-vsn/priv/ibeam_hooks/install_post.sh
 
@@ -31,7 +35,7 @@
     - code:root_dir()
     - app name,  foo
     - vsn,  1.2.3
-      
+
 
     Example:
 #+BEGIN_SRC sh
@@ -39,8 +43,8 @@ lib/app-vsn/priv/ibeam_hooks/install_post.sh \
    /path/to/lib/erlang/lib \
    foo 1.2.3
 #+END_SRC
-    
-   
+
+
 *** erl
     the file must be lib/app-vsn/priv/ibeam_hooks/install_post.erl
 
@@ -57,4 +61,4 @@ lib/app-vsn/priv/ibeam_hooks/install_post.sh \
 #+BEGIN_SRC erlang
     Mod:hook([code:root_dir(),"foo","1.2.3"]).
 #+END_SRC
-    
+
