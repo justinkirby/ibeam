@@ -31,6 +31,20 @@ run() ->
     App = ibeam_config:get_global(name),
     Vsn = ibeam_config:get_global(vsn),
 
+    case App of
+        undefined ->
+            ?ABORT("Need to specify name of release, name=RelName~n",[]);
+        _ ->
+            ok
+    end,
+    case Vsn of
+        undefined ->
+            ?ABORT("Need to specify vsn of release, vsn=RelVsn~n",[]);
+        _ ->
+            ok
+    end,
+
+
     RelName = App ++ "-" ++ Vsn,
     Dest = filename:join(["/tmp",RelName++".tar.gz"]),
 
