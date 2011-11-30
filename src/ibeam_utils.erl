@@ -54,12 +54,13 @@ mktmp_uniq() ->
 sh(Command0, Options0) ->
     ?INFO("sh: ~s~n", [Command0]),
 
-    DefaultOptions = [use_stdout, abort_on_error],
+    DefaultOptions = [use_stdout, use_stderr, abort_on_error],
     Options = [expand_sh_flag(V)
                || V <- proplists:compact(Options0 ++ DefaultOptions)],
 
     ErrorHandler = proplists:get_value(error_handler, Options),
     OutputHandler = proplists:get_value(output_handler, Options),
+    StdErrHandler = proplists:get_value(stderr_handler, Options, fun(_) -> io:format("BAH!~n~n") end),
 
     Command = patch_on_windows(Command0),
     PortSettings = proplists:get_all_values(port_settings, Options) ++
@@ -69,7 +70,8 @@ sh(Command0, Options0) ->
     case sh_loop(Port, OutputHandler, []) of
         {ok, _Output} = Ok ->
             Ok;
-        {error, Rc} ->
+        {error, {Rc, Output} } ->
+            StdErrHandler(Output),
             ErrorHandler(Command, Rc)
     end.
 
@@ -91,6 +93,10 @@ log_and_abort(Command, Rc) ->
     ?ABORT("~s failed with error: ~w\n", [Command, Rc]).
 
 
+expand_sh_flag(use_stderr) ->
+    {stderr_handler, fun(Out) ->
+                             file:write(standard_error,Out)
+                     end};
 
 expand_sh_flag(return_on_error) ->
     {error_handler,
@@ -150,7 +156,7 @@ sh_loop(Port, Fun, Acc) ->
         {Port, {exit_status, 0}} ->
             {ok, lists:flatten(Acc)};
         {Port, {exit_status, Rc}} ->
-            {error, Rc}
+            {error, {Rc, lists:flatten(Acc)}}
     end.
 
 
@@ -177,8 +183,19 @@ hook_run([],_HookPath,_Cwd,_Args,Results) -> Results;
 hook_run([{sh,File}|Hooks],_HookPath,Cwd,Args, Results) ->
     {ok,Old} = file:get_cwd(),
     file:set_cwd(Cwd),
+    RunSh = fun(F) ->
+                    case sh(F++" "++string:join(Args, ""), []) of
+                        {ok, Out} ->
+                            file:write(standard_io, Out),
+                            Out;
+                        {error, Rc} ->
+                            ?ABORT("wtf?!? we shojld not be here, ever! ~p",[Rc])
+                    end
+            end,
 
-    Result = [sh(F++" "++string:join(Args," "),[]) || F <- File],
+
+
+    Result = [RunSh(F) || F <- File],
     file:set_cwd(Old),
     hook_run(Hooks,_HookPath,Cwd,Args,Result++Results);
 
