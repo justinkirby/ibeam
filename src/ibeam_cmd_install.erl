@@ -70,7 +70,11 @@ run() ->
             ok = copy_releases(DestRoot,{App,Vsn}),
             ok = copy_misc(DestRoot,["lib","releases"]),
 
-            ibeam_utils:hook(TmpDir,install_post,[DestLib,App,Vsn])
+            %% drop the 'lib' from the path.. the path will be
+            %% /path/prefix/app/lib we want just /path/prefix/app
+            RootDir = filename:join(lists:reverse(tl(lists:reverse(filename:split(DestLib))))),
+
+            ibeam_utils:hook(TmpDir,install_post,[RootDir,App,Vsn])
     end,
 
     ok.
