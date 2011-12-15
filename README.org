@@ -7,7 +7,30 @@
 
 
 * hooks api
+  All hooks are called with the following arguments:
 
+  - -r :: release dir. The directory which the release will be/was
+	  installed, e.g. /opt/voalte/lib/admin
+  - -t :: temp dir. The temporary directory which the release tarball
+          was extracted during verification, e.g. /tmp/ibeam_9887654
+  - -n :: name of the release. This is the name component of the
+          release, e.g. admin, wctpgw, etc..
+  - -v :: vsn. The version of the release.
+
+  If a value is not known at the time the hook is called, then the
+  value will be "_", i.e. an underscore
+
+** get_pre
+   This hook will be called before any file checks or any type of
+   verification of arguments.
+
+   - -r :: release dir
+   - -t :: _
+   - -n :: release name
+   - -v :: vsn
+
+
+** get_post
 ** verify_pre
 ** verify_post
 ** install_pre

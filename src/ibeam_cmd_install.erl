@@ -38,8 +38,11 @@ run() ->
     Prefix = ibeam_config:get_global(install_prefix),
     DestRoot = filename:join([Prefix,App]),
     DestLib = filename:join([DestRoot,"lib"]),
+    HooksOnly = lists:member("install",string:tokens(ibeam_config:get_global(hooks_only,""),",")),
 
-    ibeam_utils:hook(TmpDir,install_pre,[TmpDir,App,Vsn]),
+    HookArgs = ibeam_utils:make_hook_args(DestRoot, TmpDir, App, Vsn),
+
+    ibeam_utils:hook(TmpDir,install_pre,HookArgs),
 
     %% the / is important. otherwise ensure_dir thinks the lib part of
     %% the path is a file
@@ -51,28 +54,33 @@ run() ->
     ToInstall = install_list(AppList,SysList),
 
 
-    lists:foreach(fun({A,V}) ->
-                          ?DEBUG("sys:~p-~s~n",[A,V])
-                  end, SysList),
-    lists:foreach(fun({A,V}) ->
-                          ?DEBUG("app:~p-~s~n",[A,V])
-                  end, proplists:get_value(sys,AppList)),
-
-    case ToInstall of
-        [] ->
-            ?ABORT("!!!! NOT INSTALLING ANY APPS !!!!~n",[]);
-        _ ->
+    case HooksOnly of
+        false ->
             lists:foreach(fun({A,V}) ->
-                                  ?DEBUG("install:~p-~s~n",[A,V])
-                          end, ToInstall),
+                                  ?DEBUG("sys:~p-~s~n",[A,V])
+                          end, SysList),
+            lists:foreach(fun({A,V}) ->
+                                  ?DEBUG("app:~p-~s~n",[A,V])
+                          end, proplists:get_value(sys,AppList)),
 
-            ok = copy_apps(DestRoot,DestLib,ToInstall),
-            ok = copy_releases(DestRoot,{App,Vsn}),
-            ok = copy_misc(DestRoot,["lib","releases"]),
+            case ToInstall of
+                [] ->
+                    ?ABORT("!!!! NOT INSTALLING ANY APPS !!!!~n",[]);
+                _ ->
+                    lists:foreach(fun({A,V}) ->
+                                          ?DEBUG("install:~p-~s~n",[A,V])
+                                  end, ToInstall),
 
-            ibeam_utils:hook(TmpDir,install_post,[DestLib,App,Vsn])
+                    ok = copy_apps(DestRoot,DestLib,ToInstall),
+                    ok = copy_releases(DestRoot,{App,Vsn}),
+                    ok = copy_misc(DestRoot,["lib","releases"]),
+
+
+                    ibeam_utils:hook(TmpDir,install_post,HookArgs)
+            end;
+        true ->
+            ibeam_utils:hook(TmpDir,install_post, HookArgs)
     end,
-
     ok.
 
 
