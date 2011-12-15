@@ -47,41 +47,51 @@ run() ->
     Vsn = ibeam_config:get_global(vsn),
     Prefix = ibeam_config:get_global(install_prefix),
     DestDir = filename:join([Prefix,Name]),
+    HooksOnly = lists:member("verify", string:tokens(ibeam_config:get_global(hooks_only,""),",")),
+    HookArgs = ibeam_utils:make_hook_args(DestDir, TmpDir, Name, Vsn),
     ?INFO("verifying ~s-~s in ~s~n",[Name,Vsn,TmpDir]),
+
 
     App = get_app_info(TmpDir),
     Sys = get_sys_info(DestDir,App),
 
     ibeam_config:set_global(app_info,App),
     ibeam_config:set_global(sys_info,Sys),
+    ibeam_config:set_global(tmp_dir,TmpDir),
+    ibeam_config:set_global(dest_dir, DestDir),
+
+    ibeam_utils:hook(TmpDir,verify_pre, HookArgs),
 
 
-    ibeam_utils:hook(TmpDir,verify_pre,[App,Sys]),
+    case HooksOnly of
+        false ->
+            VerifyErts = case ibeam_config:get_global(erts) of
+                             undefined ->
+                                 ?ABORT("Erts verification style not specified, see help.~n",[]);
+                             Erts -> list_to_atom(Erts)
+                         end,
+            Paths = [{global, code:root_dir()},
+                     {release, TmpDir},
+                     {embed, DestDir}
+                    ],
 
-    VerifyErts = case ibeam_config:get_global(erts) of
-                     undefined ->
-                         ?ABORT("Erts verification style not specified, see help.~n",[]);
-                     Erts -> list_to_atom(Erts)
-                 end,
-    Paths = [{global, code:root_dir()},
-             {release, TmpDir},
-             {embed, DestDir}
-            ],
+            verify_erts(VerifyErts, Paths),
 
-    verify_erts(VerifyErts, Paths),
+            VerifyType = case ibeam_config:get_global(type) of
+                             undefined ->
+                                 ?ABORT("Verify type not specified, see help.~n",[]);
+                             Type ->
+                                 list_to_atom(Type)
+                         end,
 
-    VerifyType = case ibeam_config:get_global(type) of
-                     undefined ->
-                         ?ABORT("Verify type not specified, see help.~n",[]);
-                     Type ->
-                         list_to_atom(Type)
-                 end,
-
-    case verify_rel(VerifyType,App,Sys) of
-        ok ->
-            ibeam_utils:hook(TmpDir,verify_post,[App,Sys]),
-            ok;
-        error -> error
+            case verify_rel(VerifyType,App,Sys) of
+                ok ->
+                    ibeam_utils:hook(TmpDir,verify_post,HookArgs),
+                    ok;
+                error -> error
+            end;
+        true ->
+            ibeam_utils:hook(TmpDir,verify_post,HookArgs)
     end.
 
 verify_erts(all, Paths) ->

@@ -3,6 +3,7 @@
 -include("ibeam.hrl").
 
 -export([
+         make_hook_args/4,
          hook/3,
          app_in_sys/1,
          mktmp_uniq/0,
@@ -11,6 +12,9 @@
          log_and_abort/2,
          abort/2
         ]).
+
+make_hook_args(Rel, Tmp, Name, Vsn) ->
+    ["-r", Rel, "-t", Tmp, "-n", Name, "-v", Vsn].
 
 hook(Dir, Hook, Args) ->
 
@@ -183,13 +187,17 @@ hook_run([],_HookPath,_Cwd,_Args,Results) -> Results;
 hook_run([{sh,File}|Hooks],_HookPath,Cwd,Args, Results) ->
     {ok,Old} = file:get_cwd(),
     file:set_cwd(Cwd),
+
+    ExtraArgs = ibeam_config:get_global(hook_args,""),
+    ?DEBUG("~n~nextra hook args ~p~n~n",[ExtraArgs]),
+
     RunSh = fun(F) ->
-                    case sh(F++" "++string:join(Args, " "), []) of
+                    case sh(F++" "++string:join(Args, " ")++" "++ExtraArgs, []) of
                         {ok, Out} ->
                             file:write(standard_io, Out),
                             Out;
                         {error, Rc} ->
-                            ?ABORT("wtf?!? we shojld not be here, ever! ~p",[Rc])
+                            ?ABORT("wtf?!? we should not be here, ever! ~p",[Rc])
                     end
             end,
 
