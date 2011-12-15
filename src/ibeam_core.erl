@@ -152,5 +152,6 @@ option_spec_list() ->
      {verbose, $v, "verbose", integer, "verbose logging output, 0-3 0=error,3=debug"},
      {force, $f, "force", undefined, "Skip all safety checks and start from the beginning."},
      {local_file, $l, "local", undefined, "Use local filesystem instead of url."},
-     {noauto, $a, "noauto", undefined, "Do not automatically run dependent commands."}
+     {noauto, $a, "noauto", undefined, "Do not automatically run dependent commands."},
+     {hook_args, $H, "hookargs", undefined, "Extra arguments to pass to hooks."}
     ].
