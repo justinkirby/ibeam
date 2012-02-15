@@ -29,8 +29,11 @@ run(Args) ->
 
     CommandAtoms = [list_to_atom(CmdPre++C) || C <- Commands],
 
-    process_commands(CommandAtoms),
-
+    try
+        process_commands(CommandAtoms)
+    after % Clean up
+        cleanup()
+    end,
 
     ok.
 
@@ -153,5 +156,15 @@ option_spec_list() ->
      {force, $f, "force", undefined, "Skip all safety checks and start from the beginning."},
      {local_file, $l, "local", undefined, "Use local filesystem instead of url."},
      {noauto, $a, "noauto", undefined, "Do not automatically run dependent commands."},
+     {preserve, $P, "preserve", undefined, "Preserve temporary files and directories."},
      {hook_args, $H, "hookargs", undefined, "Extra arguments to pass to hooks."}
     ].
+
+cleanup() ->
+    case ibeam_config:get_global(preserve) of
+        true ->
+            ok;
+        _ ->
+            ibeam_file_utils:rmtmp_uniq()
+    end.
+
