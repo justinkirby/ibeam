@@ -2,8 +2,10 @@
 
 -include("ibeam.hrl").
 
--export([rm_rf/1,
-	 cp_r/2
+-export([
+        rm_rf/1,
+        rmtmp_uniq/0,
+        cp_r/2
 	 ]).
 
 path_sep() -> filename:join(["a","b"]) -- "ab".
@@ -13,11 +15,11 @@ path_sep() -> filename:join(["a","b"]) -- "ab".
 rm_rf(Target) ->
     case os:type() of
         {unix, _} ->
-            {ok, []} = rebar_utils:sh(?FMT("rm -rf ~s", [Target]),
+            {ok, []} = ibeam_utils:sh(?FMT("rm -rf ~s", [Target]),
                                       [{use_stdout, false}, return_on_error]),
             ok;
 	OS ->
-	    ?ABORT("Do mot know how to rm_rf on ~p~n",[OS]),
+	    ?ABORT("Do not know how to rm_rf on ~p~n",[OS]),
 	    ok
     end.
 
@@ -31,6 +33,14 @@ cp_r(Sources, Dest) ->
 	OS ->
 	    ?ABORT("Do not know how to cp_r on ~p~n",[OS]),
 	    ok
+    end.
+
+rmtmp_uniq() ->
+    case ibeam_config:get_global(tmp_dir) of
+        undefined ->
+            ok;
+        TmpDir ->
+            rm_rf(TmpDir)
     end.
 
 %% this is complicated so bear with me.  the cp_r can make nested
