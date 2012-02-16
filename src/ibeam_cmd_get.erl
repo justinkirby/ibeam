@@ -48,7 +48,7 @@ run() ->
 fetch_source() ->
     case ibeam_config:get_global(local_file) of
         true ->
-            {cp, ibeam_file_utils:make_archive_filename()};
+            {cp, ibeam_file_utils:make_default_filename()};
         _ ->
             {wget, fetch_url()}
     end.
@@ -77,7 +77,7 @@ fetch_sh(Dest,_Src,true) ->
     ?WARN("~s exists, skipping get~n",[Dest]),
     skip;
 fetch_sh(Filename,{cp,Filename},false) ->
-    skip; % Nothing to do, files are the same name
+    ?ABORT("Source and dest filenames are the same (~s)~n",[Filename]);
 fetch_sh(Dest,{cp,Src},false) ->
     {ok,?FMT("cp -fR ~s ~s",[Src,Dest])};
 fetch_sh(Dest,{wget,Src},false) ->
