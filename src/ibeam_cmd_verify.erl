@@ -253,19 +253,20 @@ app_vsn_info(Path, App)  ->
 
 
 find_release() ->
-    %% look in /tmp/App-Vsn.tar.gz then look in rel/App-Vsn.tar.gz
-    %% then give up
-    App = ibeam_config:get_global(name),
-    Vsn = ibeam_config:get_global(vsn),
-    Fl = App ++ "-" ++ Vsn ++".tar.gz",
-    Tmp = filename:join(["/tmp",Fl]),
-    Local = filename:join(["rel",Fl]),
+    Paths = case ibeam_config:get_global(rel_archive) of
+        undefined ->
+            Fl = ibeam_file_utils:make_default_filename(),
+            [filename:join(Base, Fl) || Base <- ibeam_file_utils:default_bases()];
+        FullPath ->
+            [FullPath]
+    end,
 
     %% find the first file that exists
-    Found = [F || F <- [Tmp,Local], filelib:is_regular(F)],
-    case Found of
-        [] -> undefined;
-        L -> hd(L)
+    case lists:filter(fun filelib:is_regular/1, Paths) of
+        [F|_] ->
+            F;
+        [] ->
+            undefined
     end.
 
 
