@@ -7,6 +7,8 @@
          hook/3,
          app_in_sys/1,
          mktmp_uniq/0,
+         app_vsn_throw/0,
+         tmp_base/0,
          sh/2,
          find_executable/1,
          log_and_abort/2,
@@ -45,15 +47,36 @@ app_in_sys({Name,Vsn}) ->
     filelib:is_dir(App).
 
 mktmp_uniq() ->
-    TempBase = case os:getenv("TEMP") of
-                   false ->
-                       "/tmp";
-                   Tb -> Tb
-               end,
     Uniq = integer_to_list(erlang:phash2({node(),now()})),
-    UniqPath = filename:join([TempBase,"ibeam_"++Uniq]),
+    UniqPath = filename:join([tmp_base(), "ibeam_"++Uniq]),
     ok = filelib:ensure_dir(UniqPath),
     UniqPath.
+
+tmp_base() ->
+    case os:getenv("TEMP") of
+        false ->
+            "/tmp";
+        Tb ->
+            Tb
+    end.
+
+app_vsn_throw() ->
+    App = ibeam_config:get_global(name),
+    Vsn = ibeam_config:get_global(vsn),
+
+    case App of
+        undefined ->
+            ?ABORT("Need to specify name of release, name=RelName~n",[]);
+        _ ->
+            ok
+    end,
+    case Vsn of
+        undefined ->
+            ?ABORT("Need to specify vsn of release, vsn=RelVsn~n",[]);
+        _ ->
+            ok
+    end,
+    {App, Vsn}.
 
 sh(Command0, Options0) ->
     ?INFO("sh: ~s~n", [Command0]),
