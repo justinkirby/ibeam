@@ -76,6 +76,7 @@ parse_args(Args) ->
         {ok,{Options,NonOptArgs}} ->
             {ok,continue} = show_info_maybe_halt(Options,NonOptArgs),
             options_set(Options),
+            fix_interdependencies(),
             filter_flags(NonOptArgs,[]);
         {error, {Reason,Data}} ->
             ?ERROR("Error: ~s ~p~nAn",[Reason,Data]),
@@ -165,11 +166,21 @@ option_spec_list() ->
      {version, $V, "version", undefined, "Display version."},
      {verbose, $v, "verbose", integer, "verbose logging output, 0-3 0=error,3=debug"},
      {force, $f, "force", undefined, "Skip all safety checks and start from the beginning."},
+     {rel_archive, $A, "rel-archive", string, "Override default release archive file name to install. Implies/forces --local|-l"},
      {local_file, $l, "local", undefined, "Use local filesystem instead of url."},
      {noauto, $a, "noauto", undefined, "Do not automatically run dependent commands."},
      {preserve, $P, "preserve", undefined, "Preserve temporary files and directories."},
      {hook_args, $H, "hookargs", undefined, "Extra arguments to pass to hooks."}
     ].
+
+fix_interdependencies() ->
+    case ibeam_config:get_global(rel_archive) of
+        undefined ->
+            ok;
+        _ -> % If rel_archive is set, it implies a local file, so force it
+            ibeam_config:set_global(local_file, true) % Sorry for this kluge
+    end,
+    ok.
 
 cleanup() ->
     case ibeam_config:get_global(preserve) of

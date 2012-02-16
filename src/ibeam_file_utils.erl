@@ -5,11 +5,16 @@
 -export([
         rm_rf/1,
         rmtmp_uniq/0,
-        cp_r/2
+        cp_r/2,
+        make_archive_filename/0,
+        make_default_filename/0,
+        default_bases/0
 	 ]).
 
 path_sep() -> filename:join(["a","b"]) -- "ab".
 
+default_bases() ->
+    [ibeam_utils:tmp_base(), "rel"].
 
 
 rm_rf(Target) ->
@@ -42,6 +47,18 @@ rmtmp_uniq() ->
         TmpDir ->
             rm_rf(TmpDir)
     end.
+
+make_archive_filename() ->
+    case ibeam_config:get_global(rel_archive) of
+        undefined ->
+            filename:join(ibeam_utils:tmp_base(), make_default_filename());
+        Name ->
+            Name
+    end.
+
+make_default_filename() ->
+    {App, Vsn} = ibeam_utils:app_vsn_throw(),
+    App ++ "-" ++ Vsn ++ ".tar.gz".
 
 %% this is complicated so bear with me.  the cp_r can make nested
 %% dirs.  this means that cp -fR /tmp/foo /opt/foo MAY create

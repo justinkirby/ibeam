@@ -21,7 +21,7 @@
 
 command_help() ->
     Repos = ibeam_config:get_global(repos),
-    HelpDesc = io_lib:format("Fetches erlang release tarball found in ~s/AppName/AppName-AppVsn.tar.gz    If url parameter is specified it will just fetch that.",[Repos]),
+    HelpDesc = io_lib:format("Fetches erlang release tarball found in ~s/AppName/AppName-AppVsn.tar.gz unless overridden by -A. If url parameter is specified it will just fetch that.",[Repos]),
     {"get","name=AppName vsn=AppVsn url=http://FullUrl.com/path",HelpDesc}.
 
 deps() -> [].
@@ -32,63 +32,57 @@ checkpoint() ->
 
 run() ->
 
-    App = ibeam_config:get_global(name),
-    Vsn = ibeam_config:get_global(vsn),
-
-    RelName = App ++ "-" ++ Vsn,
-    Dest = filename:join(["/tmp",RelName++".tar.gz"]),
+    Dest = ibeam_file_utils:make_archive_filename(),
 
     %% does the file exist?
     %% if so, then only download it again if force is used
     Skip = fetch_skip(Dest),
-    Source = fetch_source(App,Vsn),
+    Source = fetch_source(),
 
     case fetch_sh(Dest,Source,Skip) of
         {ok,Sh} ->
             ibeam_utils:sh(Sh,[]);
-        ok -> ok
+        skip ->
+            ok
     end,
 
     ibeam_config:set_global(release_file,Dest),
 
     ok.
 
-fetch_source(App,Vsn) ->
+fetch_source() ->
     case ibeam_config:get_global(local_file) of
         true ->
-            {cp,?FMT("~s-~s.tar.gz",[App,Vsn])};
+            {cp, ibeam_file_utils:make_archive_filename()};
         _ ->
-            {wget,fetch_url(App,Vsn)}
+            {wget, fetch_url()}
     end.
 
 
-fetch_url(App,Vsn) ->
+fetch_url() ->
     case ibeam_config:get_global(url) of
         undefined ->
             UrlTemplate = ibeam_config:get_global(repos),
+            {App, Vsn} = ibeam_utils:app_vsn_throw(),
             ?FMT(UrlTemplate,[App,Vsn,App,Vsn]);
-        GUrl -> GUrl
+        GUrl ->
+            GUrl
     end.
 
+%% Skip fetching if
+%% - File exists and
+%% - We are not forcing a fetch and
+%% - We've not specified that the file is local.
 fetch_skip(Dest) ->
-    case filelib:is_regular(Dest) of
-        true ->
-            case ibeam_config:get_global(force, false) of
-                false ->
-                    case ibeam_config:get_global(local_file, false) of
-                        false ->
-                            true;
-                        true -> false
-                    end;
-                true -> false
-            end;
-        false -> false
-    end.
-
+    filelib:is_regular(Dest) andalso
+    (not ibeam_config:get_global(force, false)) andalso
+    (not ibeam_config:get_global(local_file, false)).
 
 fetch_sh(Dest,_Src,true) ->
     ?WARN("~s exists, skipping get~n",[Dest]),
-    ok;
+    skip;
+fetch_sh(Filename,{cp,Filename},false) ->
+    skip; % Nothing to do, files are the same name
 fetch_sh(Dest,{cp,Src},false) ->
     {ok,?FMT("cp -fR ~s ~s",[Src,Dest])};
 fetch_sh(Dest,{wget,Src},false) ->
