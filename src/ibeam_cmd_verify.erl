@@ -13,7 +13,8 @@
 
 -export([command_help/0,
          deps/0,
-         run/0
+         run/0,
+         checkpoint/0
         ]).
 
 command_help() ->
@@ -39,35 +40,34 @@ command_help() ->
 
      "      none: do not check anything.~n"
     }.
-deps() -> [ibeam_cmd_get].
+deps() ->
+    [ibeam_cmd_get,
+     ibeam_cmd_stage
+    ].
+
+checkpoint() ->
+    ibeam_checkpoint:store(?MODULE).
 
 run() ->
-    {ok, TmpDir} = extract_rel(),
+    ?INFO("verify:~n",[]),
+
     Name = ibeam_config:get_global(name),
     Vsn = ibeam_config:get_global(vsn),
-    Prefix = ibeam_config:get_global(install_prefix),
-    DestDir = filename:join([Prefix,Name]),
+    TmpDir = ibeam_config:get_global(tmp_dir), %%tmp_dir is set by stage command
+    AppList = ibeam_config:get_global(app_info),
+    SysList = ibeam_config:get_global(sys_info),
+    DestDir = ibeam_config:get_global(dest_dir),
+
     HooksOnly = lists:member("verify", string:tokens(ibeam_config:get_global(hooks_only,""),",")),
     HookArgs = ibeam_utils:make_hook_args(DestDir, TmpDir, Name, Vsn),
     ?INFO("verifying ~s-~s in ~s~n",[Name,Vsn,TmpDir]),
 
-
-    App = get_app_info(TmpDir),
-    Sys = get_sys_info(DestDir,App),
-
-    ibeam_config:set_global(app_info,App),
-    ibeam_config:set_global(sys_info,Sys),
-    ibeam_config:set_global(tmp_dir,TmpDir),
-    ibeam_config:set_global(dest_dir, DestDir),
-
     ibeam_utils:hook(TmpDir,verify_pre, HookArgs),
-
 
     case HooksOnly of
         false ->
             VerifyErts = case ibeam_config:get_global(erts) of
-                             undefined ->
-                                 ?ABORT("Erts verification style not specified, see help.~n",[]);
+                             undefined -> none;
                              Erts -> list_to_atom(Erts)
                          end,
             Paths = [{global, code:root_dir()},
@@ -78,14 +78,15 @@ run() ->
             verify_erts(VerifyErts, Paths),
 
             VerifyType = case ibeam_config:get_global(type) of
-                             undefined ->
-                                 ?ABORT("Verify type not specified, see help.~n",[]);
-                             Type ->
-                                 list_to_atom(Type)
+                             undefined -> none;
+                             Type -> list_to_atom(Type)
                          end,
 
-            case verify_rel(VerifyType,App,Sys) of
+            case verify_rel(VerifyType,AppList,SysList) of
                 ok ->
+
+                    sys_config(TmpDir, Vsn),
+
                     ibeam_utils:hook(TmpDir,verify_post,HookArgs),
                     ok;
                 error -> error
@@ -115,57 +116,8 @@ verify_rel(Type,_App,_Sys) ->
     ?ABORT("undefined verify type specified, ~p is not valid.~n",[Type]),
     error.
 
-extract_rel() ->
-    RelFile = case ibeam_config:get_global(release_file) of
-                  undefined ->
-                      find_release();
-                  Rel -> Rel
-              end,
-    TmpDir = ibeam_utils:mktmp_uniq(),
-    case erl_tar:extract(RelFile,[{cwd,TmpDir},compressed]) of
-        {error, R} -> ?ABORT("~p~n",[R]);
-        ok -> ok
-    end,
-    ibeam_config:set_global(tmp_dir,TmpDir),
-    {ok, TmpDir}.
 
 
-get_sys_info(DestPath,[{sys,AppSys},{dep,AppDep},{app,AppApp},{erts,_ErtsVsn}]) ->
-    ToCheck = AppSys++AppDep++AppApp,
-    AtomToVer = fun({A,_V}) ->
-                        case app_vsn_info(DestPath,A) of
-                            undefined -> error;
-                            Vsn -> {A,Vsn}
-                        end
-                end,
-    SysSys = lists:map(AtomToVer,ToCheck),
-    Rv = lists:filter(fun(AV) -> case AV of error -> false; _ -> true end end,SysSys),
-    [{erts,erlang:system_info(version)}|Rv].
-
-
-get_app_info(TmpDir) ->
-
-    App = ibeam_config:get_global(name),
-    Vsn = ibeam_config:get_global(vsn),
-
-    %% get the vsn of erts, kernel, stdlib from start_clean
-    AppRel = filename:join([TmpDir,"releases",Vsn,App++".rel"]),
-    DepsRel = filename:join([TmpDir,"lib",App++"-"++Vsn,"priv","deps.rel"]),
-    {ok, [{release,RelAppVsn,{erts,RelErts}, _RelApps}]} = file:consult(AppRel),
-    {ok, [SysDep,AppDep,AppApp]} = file:consult(DepsRel),
-
-
-    %% verify that the app and vsn are same
-    case RelAppVsn of
-        {App,Vsn} -> ok;
-        _ ->
-            ?ABORT("App and vsn in rel file do not match!~n ~p != ~p~n",[{App,Vsn},RelAppVsn])
-    end,
-
-    [SysDep,
-     AppDep,
-     AppApp,
-     {erts,[{erts,RelErts}]}].
 
 
 verify([], _App, _Sys) -> ok;
@@ -218,13 +170,6 @@ verify_erts([T|Types],  Paths, Acc) ->
             ?ABORT("~p erts-~s is different than release erts-~s~n",[T,TVsn,RelVsn])
     end.
 
-
-
-
-
-
-
-
 erts_vsn(global,_Paths) ->
     {global,[{path,code:lib_dir()},{vsn,erlang:system_info(version)}]};
 erts_vsn(Type,Paths) ->
@@ -240,33 +185,19 @@ erts_vsn(Type,Paths) ->
     end.
 
 
-app_vsn_info(Path, App)  when is_atom(App) ->
-    app_vsn_info(Path,atom_to_list(App));
-app_vsn_info(Path, App)  ->
-    case filelib:wildcard(filename:join([Path,"lib",App++"-*"])) of
-        [] -> undefined;
-        AppVsn ->
-            lists:last(string:tokens(hd(AppVsn),"-"))
+sys_config(TmpDir, Vsn) ->
+    SysConfig = filename:join([TmpDir, "releases", Vsn, "sys.config"]),
+
+    case file:consult(SysConfig) of
+        {ok, _} ->
+            ?INFO("~s is syntactically correct~n",[SysConfig]),
+            ok;
+        {error, Error} when is_atom(Error) ->
+            ?ABORT("error in generated ~s : ~p~n",[SysConfig,Error]);
+        {error, {Line, _Mod, Term}} ->
+            Msg = case Term of
+                      Term when is_list(Term) -> lists:flatten(Term);
+                      _ -> Term
+                  end,
+            ?ABORT("~s:~p: ~p~n",[SysConfig, Line, Msg])
     end.
-
-
-
-
-find_release() ->
-    Paths = case ibeam_config:get_global(rel_archive) of
-        undefined ->
-            Fl = ibeam_file_utils:make_default_filename(),
-            [filename:join(Base, Fl) || Base <- ibeam_file_utils:default_bases()];
-        FullPath ->
-            [FullPath]
-    end,
-
-    %% find the first file that exists
-    case lists:filter(fun filelib:is_regular/1, Paths) of
-        [F|_] ->
-            F;
-        [] ->
-            undefined
-    end.
-
-
