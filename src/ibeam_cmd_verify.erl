@@ -66,8 +66,7 @@ run() ->
     case HooksOnly of
         false ->
             VerifyErts = case ibeam_config:get_global(erts) of
-                             undefined ->
-                                 ?ABORT("Erts verification style not specified, see help.~n",[]);
+                             undefined -> none;
                              Erts -> list_to_atom(Erts)
                          end,
             Paths = [{global, code:root_dir()},
@@ -78,10 +77,8 @@ run() ->
             verify_erts(VerifyErts, Paths),
 
             VerifyType = case ibeam_config:get_global(type) of
-                             undefined ->
-                                 ?ABORT("Verify type not specified, see help.~n",[]);
-                             Type ->
-                                 list_to_atom(Type)
+                             undefined -> none;
+                             Type -> list_to_atom(Type)
                          end,
 
             case verify_rel(VerifyType,App,Sys) of
@@ -267,5 +264,3 @@ find_release() ->
         [] -> undefined;
         L -> hd(L)
     end.
-
-
