@@ -13,7 +13,8 @@
 
 -export([command_help/0,
          deps/0,
-         run/0
+         run/0,
+         checkpoint/0
         ]).
 
 
@@ -23,8 +24,12 @@ command_help() ->
 deps() ->
     [
      ibeam_cmd_get,
+     ibeam_cmd_stage,
      ibeam_cmd_verify
     ].
+
+checkpoint() ->
+    ibeam_checkpoint:store(?MODULE).
 
 
 run() ->
@@ -36,6 +41,7 @@ run() ->
     AppList = ibeam_config:get_global(app_info),
     SysList = ibeam_config:get_global(sys_info),
     Prefix = ibeam_config:get_global(install_prefix),
+    ToInstall = ibeam_config:get_global(install_list),
     DestRoot = filename:join([Prefix,App]),
     DestLib = filename:join([DestRoot,"lib"]),
     HooksOnly = lists:member("install",string:tokens(ibeam_config:get_global(hooks_only,""),",")),
@@ -47,11 +53,6 @@ run() ->
     %% the / is important. otherwise ensure_dir thinks the lib part of
     %% the path is a file
     filelib:ensure_dir(DestLib ++ "/"),
-
-
-
-
-    ToInstall = install_list(AppList,SysList),
 
 
     case HooksOnly of
@@ -82,46 +83,6 @@ run() ->
             ibeam_utils:hook(TmpDir,install_post, HookArgs)
     end,
     ok.
-
-
-install_list(App, Sys) ->
-    %% note we check sys apps because there might be nothing there,
-    %% e.g. first install
-    All = proplists:get_value(dep,App,[]) ++
-        proplists:get_value(app,App,[]) ++
-        proplists:get_value(sys,App,[]),
-    case ibeam_config:get_global(force,false) of
-        true ->
-            %% if force is specified, then just install everything
-            All;
-        false ->
-            install_list_nice(All,Sys,[])
-    end.
-
-install_list_nice([],_Sys,Install) -> Install;
-install_list_nice([{Name,Vsn}|App],Sys,Install) ->
-    SysVsn =  proplists:get_value(Name,Sys),
-    Add = case SysVsn of
-              %% it is not there, so we install it
-              undefined ->true;
-
-              %% same vsn, so we ignore it
-              Vsn -> false;
-
-              %% Vsn in rel is > installed, upgrade it
-              SysVsn when Vsn > SysVsn -> true;
-
-              %% Vsn in rel is < installed! wtf, abort.
-              SysVsn when Vsn < SysVsn ->
-                  ?ABORT(" ~p-~s is older than ~p-~s. Use -f to force the install.~n",[Name,Vsn,Name,SysVsn]),
-                  false
-          end,
-    if
-        Add =:= true ->
-            install_list_nice(App,Sys,[{Name,Vsn}|Install]);
-        true ->
-            install_list_nice(App,Sys,Install)
-    end.
 
 
 
@@ -209,8 +170,3 @@ extract_manifest_tarball(RootPath,{tar,Tar,Path}) ->
     Cwd = filename:join([RootPath,Path]),
     TarPath = filename:join([RootPath,Tar]),
     erl_tar:extract(TarPath,[{cwd,Cwd},compressed]).
-
-
-
-
-

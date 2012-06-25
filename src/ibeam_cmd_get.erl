@@ -14,7 +14,8 @@
 
 -export([command_help/0,
          deps/0,
-         run/0
+         run/0,
+         checkpoint/0
         ]).
 
 
@@ -24,6 +25,9 @@ command_help() ->
     {"get","name=AppName vsn=AppVsn url=http://FullUrl.com/path",HelpDesc}.
 
 deps() -> [].
+
+checkpoint() ->
+    ibeam_checkpoint:store(?MODULE).
 
 
 run() ->

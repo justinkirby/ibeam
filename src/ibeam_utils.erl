@@ -32,12 +32,6 @@ hook(Dir, Hook, Args) ->
 
 
 
-
-
-
-
-
-
 app_in_sys({Name,Vsn}) ->
     Lib = code:lib_dir(),
     App = filename:join(Lib,Name++"-"++Vsn),
@@ -221,4 +215,3 @@ hook_run([{erl,File}|Hooks],HookPath, Cwd, Args,Results) ->
     Result = [Run(F) || F <- File],
     file:set_cwd(Old),
     hook_run(Hooks,HookPath,Cwd,Args,Result++Results).
-

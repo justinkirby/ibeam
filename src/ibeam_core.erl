@@ -21,14 +21,19 @@ run(["version"]) ->
     version(),
     ok;
 run(Args) ->
-    Commands = parse_args(Args),
 
+    Commands = parse_args(Args),
     ibeam_log:init(),
+
+    %% list of vars we do NOT want to override is what is specified on
+    %% the command line. So get them from the list and pass them into
+    %% load
+    NoOverride = [K || {K, _, _, _, _} <- option_spec_list()],
+    ibeam_checkpoint:load(NoOverride),
 
     CmdPre = ibeam_config:get_global(command_prefix),
 
     CommandAtoms = [list_to_atom(CmdPre++C) || C <- Commands],
-
     process_commands(CommandAtoms),
 
 
@@ -50,7 +55,13 @@ process_commands([Command|Rest],History) ->
                                  process_commands(Pre,History)
                          end,
 
-            Command:run(),
+            case ibeam_checkpoint:maybe_run(Command) of
+                false ->
+                    ?INFO("Command ~p is checkpointed, use -f to force~n",[Command]);
+                true ->
+                    Command:run(),
+                    Command:checkpoint()
+            end,
             process_commands(Rest,[Command|NewHistory])
     end.
 
