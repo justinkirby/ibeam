@@ -192,6 +192,12 @@ sys_config(TmpDir, Vsn) ->
         {ok, _} ->
             ?INFO("~s is syntactically correct~n",[SysConfig]),
             ok;
-        {error, Error} ->
-            ?ABORT("error in generated ~s : ~p~n",[SysConfig,Error])
+        {error, Error} when is_atom(Error) ->
+            ?ABORT("error in generated ~s : ~p~n",[SysConfig,Error]);
+        {error, {Line, _Mod, Term}} ->
+            Msg = case Term of
+                      Term when is_list(Term) -> lists:flatten(Term);
+                      _ -> Term
+                  end,
+            ?ABORT("~s:~p: ~p~n",[SysConfig, Line, Msg])
     end.
