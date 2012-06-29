@@ -49,12 +49,8 @@ rmtmp_uniq() ->
     end.
 
 make_archive_filename() ->
-    case ibeam_config:get_global(rel_archive) of
-        undefined ->
-            filename:join(ibeam_utils:tmp_base(), make_default_filename());
-        Name ->
-            Name
-    end.
+    filename:join(ibeam_utils:tmp_base(), make_default_filename()).
+
 
 make_default_filename() ->
     {App, Vsn} = ibeam_utils:app_vsn_throw(),
@@ -93,6 +89,3 @@ munge_dest(Source, Dest) ->
                     filename:join(lists:reverse(tl(lists:reverse(filename:split(Dest)))))
             end
     end.
-
-
-

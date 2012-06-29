@@ -55,7 +55,7 @@ fetch_source() ->
         true ->
             {cp, ibeam_file_utils:make_archive_filename()};
         _ ->
-            {wget, fetch_url()}
+            {curl, fetch_url()}
     end.
 
 
@@ -85,7 +85,7 @@ fetch_sh(Filename,{cp,Filename},false) ->
     skip; % Nothing to do, files are the same name
 fetch_sh(Dest,{cp,Src},false) ->
     {ok,?FMT("cp -fR ~s ~s",[Src,Dest])};
-fetch_sh(Dest,{wget,Src},false) ->
-    {ok,?FMT("wget --no-check-certificate -nv -O ~s ~s",[Dest,Src])};
+fetch_sh(Dest,{curl,Src},false) ->
+    {ok,?FMT("curl -skn --fail -o ~s ~s",[Dest,Src])};
 fetch_sh(_,Src,false) ->
     ?ABORT("~s is an invalid source~n",[Src]).
