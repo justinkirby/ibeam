@@ -32,7 +32,7 @@ load(NoOverride) ->
 store(Cmd) ->
     Fname = checkpoint_name(),
 
-    ibeam_config:set_global(checkpoint_commands, [Cmd|ibeam_config:get_global(checkpoint_commands, [])]),
+    ibeam_config:set_global(checkpoint_commands, lists:usort([Cmd|ibeam_config:get_global(checkpoint_commands, [])])),
 
     ToStore = [io_lib:format("~p.~n",[E]) || E <- application:get_all_env(ibeam)],
 
@@ -50,8 +50,7 @@ maybe_run(Cmd) ->
 
 
 checkpoint_name() ->
-    App = ibeam_config:get_global(name),
-    Vsn = ibeam_config:get_global(vsn),
+    {App, Vsn} = ibeam_utils:app_vsn_throw(),
     CheckPath = ibeam_config:get_global(checkpoint),
 
     lists:flatten(io_lib:format(CheckPath, [App, Vsn])).
