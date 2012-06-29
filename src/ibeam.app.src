@@ -1,3 +1,4 @@
+%%-*- mode:erlang -*-
 {application, ibeam,
  [
   {description, "Voalte Installer"},
@@ -6,35 +7,36 @@
   {applications, [
                   kernel,
                   stdlib,
-		  sasl
+                  sasl
                  ]},
   {mod, { ibeam_app, [
-		      ibeam,
-		      ibeam_app,
-		      ibeam_cmd_get,
-		      ibeam_cmd_install,
-		      ibeam_cmd_verify,
-		      ibeam_command,
-		      ibeam_config,
-		      ibeam_core,
-		      ibeam_file_utils,
-		      ibeam_log,
-		      ibeam_sup,
-		      ibeam_utils
-		     ]}},
+                      ibeam,
+                      ibeam_app,
+                      ibeam_cmd_get,
+                      ibeam_cmd_install,
+                      ibeam_cmd_verify,
+                      ibeam_command,
+                      ibeam_config,
+                      ibeam_core,
+                      ibeam_file_utils,
+                      ibeam_log,
+                      ibeam_sup,
+                      ibeam_utils
+                     ]}},
   {env, [
-	 {commands, [
-		     get,
-		     stage,
-		     install,
-		     verify
-		     ]},
-	 {command_prefix, "ibeam_cmd_"},
-	 {repos, "http://kickstart.voalte.net/~s/~s/~s-~s.tar.gz"},
-	 {install_prefix, "/opt/voalte/lib"},
-	 {verbose, 1},
-	 {log_level,info},
-	 {checkpoint, "/tmp/.~s-~s.ibeam"},
-	 {force, false}
-	]}
+         {commands, [
+                     get,
+                     stage,
+                     verify,
+                     install,
+                     clean
+                    ]},
+         {command_prefix, "ibeam_cmd_"},
+         {repos, "http://kickstart.voalte.net/~s/~s/~s-~s.tar.gz"},
+         {install_prefix, "/opt/voalte/lib"},
+         {verbose, 1},
+         {log_level,info},
+         {checkpoint, "/tmp/.~s-~s.ibeam"},
+         {force, false}
+        ]}
  ]}.

@@ -54,6 +54,10 @@ run() ->
     %% the path is a file
     filelib:ensure_dir(DestLib ++ "/"),
 
+    %% make this infor permanent
+    ibeam_config:set_global(dest_root, DestRoot),
+    ibeam_config:set_global(dest_lib, DestLib),
+
 
     case HooksOnly of
         false ->

@@ -10,12 +10,24 @@
 
 
 -export([
+         name/0,
+         exist/0,
          load/1,
          store/1,
          maybe_run/1
          ]).
 
 -include("ibeam.hrl").
+
+name() ->
+    checkpoint_name().
+
+exist() ->
+    filelib:is_regular(checkpoint_name()).
+
+
+
+
 
 load(NoOverride) ->
 
