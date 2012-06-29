@@ -76,8 +76,8 @@ parse_args(Args) ->
         {ok,{Options,NonOptArgs}} ->
             {ok,continue} = show_info_maybe_halt(Options,NonOptArgs),
             options_set(Options),
-            fix_interdependencies(),
             filter_flags(NonOptArgs,[]);
+
         {error, {Reason,Data}} ->
             ?ERROR("Error: ~s ~p~nAn",[Reason,Data]),
             help(),
