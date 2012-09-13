@@ -14,8 +14,8 @@ from datetime import datetime
 
 env.now = datetime.now().strftime("%Y%m%d%H%M")
 env.ver = "00.02.01"
-env.pdir = "/Volumes/OurData/WebServer/kickstart.voalte.net/ibeam"
-env.hosts = ["jkirby@office.voalte.net:64322"]
+env.pdir = ""
+env.hosts = [""]
 
 def release(version=None):
     dirnm = "%s/%s/%s"%(env.pdir,env.ver,env.now)
@@ -24,7 +24,3 @@ def release(version=None):
     put("ibeam",dirnm)
     run("if test -e %s; then rm -f %s; fi"%(ln,ln))
     run("ln -s %s %s"%(dirnm+"/ibeam",ln))
-
-
-
-
